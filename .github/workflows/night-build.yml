@@ -60,15 +60,24 @@ jobs:
             yasm
             nasm
             ninja
+            unzip
             mingw-w64-ucrt-x86_64-pkgconf
-            mingw-w64-ucrt-x86_64-cmake
             mingw-w64-ucrt-x86_64-meson
             mingw-w64-ucrt-x86_64-gcc
+      - name: Install CMake 3.27.9
+        shell: msys2 {0}
+        run: |
+          mkdir -p /opt/cmake
+          curl -L -o cmake.zip https://github.com/Kitware/CMake/releases/download/v3.27.9/cmake-3.27.9-windows-x86_64.zip
+          unzip -q cmake.zip -d /opt/cmake
+          export PATH="/opt/cmake/cmake-3.27.9-windows-x86_64/bin:$PATH"
+          cmake --version
       - name: Build
         shell: msys2 {0}
         run: |
           echo "Building windows-x64..."
           chmod +x ./build_windows.sh
+          cmake --version
           ./build_windows.sh x86_64
           ls -lah out/
       - name: Upload windows x64 artifact

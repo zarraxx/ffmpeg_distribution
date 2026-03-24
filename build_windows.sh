@@ -23,18 +23,17 @@ source $ROOT/script/ffmpeg.sh
 
 cmake --version
 
-build_lame
-build_ogg
+#build_lame
+#build_ogg
+#
+#export VORBIS_CMAKE_EXTRA="-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
+#build_vorbis
+#build_opus
+#build_x264
 
-export VORBIS_CMAKE_EXTRA="-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
-build_vorbis
-build_opus
-build_x264
-
-export X265_CMAKE_EXTRA="-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
 build_x265
-build_dav1d
-build_ffmpeg
+#build_dav1d
+#build_ffmpeg
 
 
 tar -czvf $OUTPUT_DIR/ffmpeg-windows-x64.tar.gz -C $DEST_DIR .
