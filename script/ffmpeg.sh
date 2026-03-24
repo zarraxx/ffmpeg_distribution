@@ -72,7 +72,21 @@ build_vorbis(){
     -DBUILD_SHARED_LIBS=OFF \
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
     -DCMAKE_INSTALL_LIBDIR=lib  \
-    -DCMAKE_INSTALL_PREFIX=$DEST_DIR ..
+    -DCMAKE_INSTALL_PREFIX=$DEST_DIR \
+    ${VORBIS_CMAKE_EXTRA} ..
+    make -j$(nproc)
+    make install
+}
+
+build_vorbis_autotolls(){
+    download_file "libvorbis-$VORBIS_VERSION.tar.xz"
+    cd $BUILD_DIR
+    rm -rf libvorbis*
+    tar xvf $ARCHIVE_DIR/libvorbis-$VORBIS_VERSION.tar.xz
+    cd libvorbis-$VORBIS_VERSION
+
+    ./autogen.sh
+    ./configure --prefix=$DEST_DIR  --disable-shared --enable-static --disable-frontend
     make -j$(nproc)
     make install
 }

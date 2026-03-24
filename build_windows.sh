@@ -23,6 +23,8 @@ source $ROOT/script/ffmpeg.sh
 
 build_lame
 build_ogg
+
+export VORBIS_CMAKE_EXTRA="-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
 build_vorbis
 build_opus
 build_x264
