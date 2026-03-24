@@ -30,6 +30,8 @@ export VORBIS_CMAKE_EXTRA="-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
 build_vorbis
 build_opus
 build_x264
+
+export X265_CMAKE_EXTRA="-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
 build_x265
 build_dav1d
 build_ffmpeg
