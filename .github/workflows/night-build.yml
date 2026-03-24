@@ -8,38 +8,39 @@ on:
 permissions:
   contents: write
 jobs:
-  # build-linux-x64:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v5
-  #     - name: Build
-  #       run: |
-  #         echo "Building linux-x64..."
-  #         ./build_linux.sh
-  #         ls -lah out/
-  #     - name: Upload x64 artifact
-  #       uses: actions/upload-artifact@v6
-  #       with:
-  #         name: ffmpeg-linux-x86_64
-  #         path: out/ffmpeg-linux-x86_64.tar.gz
-  #         if-no-files-found: error
-  #         retention-days: 2
-  # build-linux-aarch64:
-  #   runs-on: ubuntu-24.04-arm
-  #   steps:
-  #     - uses: actions/checkout@v5
-  #     - name: Build
-  #       run: |
-  #         echo "Building linux-aarch64..."
-  #         ./build_linux.sh
-  #         ls -lah out/
-  #     - name: Upload aarch64 artifact
-  #       uses: actions/upload-artifact@v6
-  #       with:
-  #         name: ffmpeg-linux-aarch64
-  #         path: out/ffmpeg-linux-aarch64.tar.gz
-  #         if-no-files-found: error
-  #         retention-days: 2
+  build-linux-x64:
+     runs-on: ubuntu-latest
+     steps:
+       - uses: actions/checkout@v5
+       - name: Build
+         run: |
+           echo "Building linux-x64..."
+           ./build_linux.sh
+           ls -lah out/
+       - name: Upload x64 artifact
+         uses: actions/upload-artifact@v6
+         with:
+           name: ffmpeg-linux-x86_64
+           path: out/ffmpeg-linux-x86_64.tar.gz
+           if-no-files-found: error
+           retention-days: 2
+
+  build-linux-aarch64:
+     runs-on: ubuntu-24.04-arm
+     steps:
+       - uses: actions/checkout@v5
+       - name: Build
+         run: |
+           echo "Building linux-aarch64..."
+           ./build_linux.sh
+           ls -lah out/
+       - name: Upload aarch64 artifact
+         uses: actions/upload-artifact@v6
+         with:
+           name: ffmpeg-linux-aarch64
+           path: out/ffmpeg-linux-aarch64.tar.gz
+           if-no-files-found: error
+           retention-days: 2
 
   build-windows-x64:
     runs-on: windows-latest
@@ -132,41 +133,42 @@ jobs:
   #         if-no-files-found: error
   #         retention-days: 2
 
-  # publish-nightly:
-  #   needs:
-  #     - build-linux-x64
-  #     - build-linux-aarch64
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Download linux x64 artifact
-  #       uses: actions/download-artifact@v8
-  #       with:
-  #         name: ffmpeg-linux-x86_64
-  #         path: dist
-  #     - name: Download linux aarch64 artifact
-  #       uses: actions/download-artifact@v8
-  #       with:
-  #         name: ffmpeg-linux-aarch64
-  #         path: dist
-  #     - name: Download windows artifact
-  #       uses: actions/download-artifact@v8
-  #       with:
-  #         name: ffmpeg-windows-x86_64
-  #         path: dist
-  #     - name: Show downloaded files
-  #       run: ls -lah dist
-  #     - name: Publish Nightly Release
-  #       uses: ncipollo/release-action@v1
-  #       with:
-  #         tag: nightly
-  #         name: Nightly Build
-  #         body: |
-  #           Automated nightly build.
-  #           Commit: ${{ github.sha }}
-  #           Trigger: ${{ github.event_name }}
-  #         artifacts: "dist/*.tar.gz"
-  #         allowUpdates: true
-  #         replacesArtifacts: true
-  #         removeArtifacts: true
-  #         prerelease: true
-  #         makeLatest: false
+  publish-nightly:
+   needs:
+     - build-linux-x64
+     - build-linux-aarch64
+     - build-windows-x64
+   runs-on: ubuntu-latest
+   steps:
+     - name: Download linux x64 artifact
+       uses: actions/download-artifact@v8
+       with:
+         name: ffmpeg-linux-x86_64
+         path: dist
+     - name: Download linux aarch64 artifact
+       uses: actions/download-artifact@v8
+       with:
+         name: ffmpeg-linux-aarch64
+         path: dist
+     - name: Download windows artifact
+       uses: actions/download-artifact@v8
+       with:
+         name: ffmpeg-windows-x86_64
+         path: dist
+     - name: Show downloaded files
+       run: ls -lah dist
+     - name: Publish Nightly Release
+       uses: ncipollo/release-action@v1
+       with:
+         tag: nightly
+         name: Nightly Build
+         body: |
+           Automated nightly build.
+           Commit: ${{ github.sha }}
+           Trigger: ${{ github.event_name }}
+         artifacts: "dist/*.tar.gz"
+         allowUpdates: true
+         replacesArtifacts: true
+         removeArtifacts: true
+         prerelease: true
+         makeLatest: false
