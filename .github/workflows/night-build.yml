@@ -138,15 +138,20 @@ jobs:
   #     - build-linux-aarch64
   #   runs-on: ubuntu-latest
   #   steps:
-  #     - name: Download x64 artifact
+  #     - name: Download linux x64 artifact
   #       uses: actions/download-artifact@v8
   #       with:
   #         name: ffmpeg-linux-x86_64
   #         path: dist
-  #     - name: Download aarch64 artifact
+  #     - name: Download linux aarch64 artifact
   #       uses: actions/download-artifact@v8
   #       with:
   #         name: ffmpeg-linux-aarch64
+  #         path: dist
+  #     - name: Download windows artifact
+  #       uses: actions/download-artifact@v8
+  #       with:
+  #         name: ffmpeg-windows-x86_64
   #         path: dist
   #     - name: Show downloaded files
   #       run: ls -lah dist
