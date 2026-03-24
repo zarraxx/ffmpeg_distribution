@@ -7,6 +7,8 @@ export x265_VERSION=4.1
 export AV1_VERSION=1.5.3
 export OPUS_VERSION=1.6.1
 
+export PKG_CONFIG_PATH="$DEST_DIR/lib/pkgconfig:$DEST_DIR/lib64/pkgconfig:$PKG_CONFIG_PATH"
+
 download_file() {
     local filename=$1
     local archive_dir=$ARCHIVE_DIR
@@ -162,8 +164,6 @@ build_ffmpeg(){
     rm -rf ffmpeg*
     tar xvf $ARCHIVE_DIR/ffmpeg-$FFMPEG_VERSION.tar.xz
     cd ffmpeg-$FFMPEG_VERSION
-    export PKG_CONFIG_PATH="$DEST_DIR/lib/pkgconfig:$DEST_DIR/lib64/pkgconfig:$PKG_CONFIG_PATH"
-
 
  ./configure \
     --prefix=$DEST_DIR \
