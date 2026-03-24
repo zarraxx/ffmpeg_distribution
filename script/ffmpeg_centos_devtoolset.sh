@@ -30,6 +30,12 @@ build_ogg
 build_vorbis
 build_opus
 build_x264
+
+if [ "$(uname -m)" = "aarch64" ]; then
+  export X265_CMAKE_EXTRA="-DENABLE_ASSEMBLY=OFF"
+else
+  export X265_CMAKE_EXTRA=""
+fi
 build_x265
 build_dav1d
 build_ffmpeg

@@ -116,7 +116,7 @@ build_x265(){
 
     rm -rf _build && mkdir -p _build && cd _build
     cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release  -DCMAKE_INSTALL_LIBDIR=lib \
-    -DCMAKE_INSTALL_PREFIX=$DEST_DIR -DENABLE_SHARED=0 -DENABLE_CLI=0 -DENABLE_PIC=1 ../source
+    -DCMAKE_INSTALL_PREFIX=$DEST_DIR -DENABLE_SHARED=0 -DENABLE_CLI=0 -DENABLE_PIC=1 ${X265_CMAKE_EXTRA} ../source
     make -j$(nproc)
     make install
 }
