@@ -2,8 +2,8 @@ name: FFmpeg Nightly Build
 
 on:
   workflow_dispatch:
-  # schedule:
-  #   - cron: '0 19 * * *'  # 北京时间每天 03:00
+  schedule:
+    - cron: '0 19 * * *'  # 北京时间每天 03:00
 
 permissions:
   contents: write
