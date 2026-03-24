@@ -16,7 +16,7 @@ mkdir -p $WORKSPACE
 mkdir -p $ARCHIVE_DIR
 
 export BUILD_DIR=$WORKSPACE
-export DEST_DIR=$DEST_DIR
+export DEST_DIR=$DEST_DIR/ffmpeg
 export ARCHIVE_DIR=$ARCHIVE_DIR
 
 source $ROOT/script/ffmpeg.sh
@@ -36,4 +36,4 @@ build_dav1d
 build_ffmpeg
 
 
-tar -czvf $OUTPUT_DIR/ffmpeg-windows-x86_64.tar.gz -C $DEST_DIR .
+tar -czvf $OUTPUT_DIR/ffmpeg-windows-x86_64.tar.gz -C "$(dirname "$DEST_DIR")" "$(basename "$DEST_DIR")"

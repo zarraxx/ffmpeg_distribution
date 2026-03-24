@@ -30,4 +30,4 @@ $DOCKER run -it --rm --name=$NAME  \
     	$IMAGE /bin/bash -c "/script/ffmpeg_centos_devtoolset.sh"
 
 
-tar -czvf $OUTPUT_DIR/ffmpeg-linux-$ARCH.tar.gz -C $DEST_DIR .
+tar -czvf $OUTPUT_DIR/ffmpeg-linux-$ARCH.tar.gz -C "$(dirname "$DEST_DIR")" "$(basename "$DEST_DIR")"
