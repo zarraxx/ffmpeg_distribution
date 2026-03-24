@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -e
 NAME=ffmpeg_build
 IMAGE=registry.cn-hangzhou.aliyuncs.com/zarra/centos:x-tools-base
 ROOT="$(cd $(dirname "$(realpath "$0")");pwd)"

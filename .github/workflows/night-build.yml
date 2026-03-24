@@ -8,69 +8,150 @@ on:
 permissions:
   contents: write
 jobs:
-  build-linux-x64:
-    runs-on: ubuntu-latest
+  # build-linux-x64:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v5
+  #     - name: Build
+  #       run: |
+  #         echo "Building linux-x64..."
+  #         ./build_linux.sh
+  #         ls -lah out/
+  #     - name: Upload x64 artifact
+  #       uses: actions/upload-artifact@v6
+  #       with:
+  #         name: ffmpeg-linux-x86_64
+  #         path: out/ffmpeg-linux-x86_64.tar.gz
+  #         if-no-files-found: error
+  #         retention-days: 2
+  # build-linux-aarch64:
+  #   runs-on: ubuntu-24.04-arm
+  #   steps:
+  #     - uses: actions/checkout@v5
+  #     - name: Build
+  #       run: |
+  #         echo "Building linux-aarch64..."
+  #         ./build_linux.sh
+  #         ls -lah out/
+  #     - name: Upload aarch64 artifact
+  #       uses: actions/upload-artifact@v6
+  #       with:
+  #         name: ffmpeg-linux-aarch64
+  #         path: out/ffmpeg-linux-aarch64.tar.gz
+  #         if-no-files-found: error
+  #         retention-days: 2
+
+  build-windows-x64:
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            base-devel
+            git
+            tar
+            diffutils
+            make
+            pkgconf
+            yasm
+            nasm
+            cmake
+            meson
+            mingw-w64-ucrt-x86_64-gcc
       - name: Build
+        shell: msys2 {0}
         run: |
-          echo "Building linux-x64..."
-          ./build_linux.sh
+          echo "Building windows-x64..."
+          chmod +x ./build_windows.sh
+          ./build_windows.sh x86_64
           ls -lah out/
-      - name: Upload x64 artifact
+      - name: Upload windows x64 artifact
         uses: actions/upload-artifact@v6
         with:
-          name: ffmpeg-linux-x86_64
-          path: out/ffmpeg-linux-x86_64.tar.gz
-          if-no-files-found: error
-          retention-days: 2
-  build-linux-aarch64:
-    runs-on: ubuntu-24.04-arm
-    steps:
-      - uses: actions/checkout@v5
-      - name: Build
-        run: |
-          echo "Building linux-aarch64..."
-          ./build_linux.sh
-          ls -lah out/
-      - name: Upload aarch64 artifact
-        uses: actions/upload-artifact@v6
-        with:
-          name: ffmpeg-linux-aarch64
-          path: out/ffmpeg-linux-aarch64.tar.gz
+          name: ffmpeg-windows-x86_64
+          path: out/ffmpeg-windows-x86_64.tar.gz
           if-no-files-found: error
           retention-days: 2
 
-  publish-nightly:
-    needs:
-      - build-linux-x64
-      - build-linux-aarch64
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download x64 artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: ffmpeg-linux-x86_64
-          path: dist
-      - name: Download aarch64 artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: ffmpeg-linux-aarch64
-          path: dist
-      - name: Show downloaded files
-        run: ls -lah dist
-      - name: Publish Nightly Release
-        uses: ncipollo/release-action@v1
-        with:
-          tag: nightly
-          name: Nightly Build
-          body: |
-            Automated nightly build.
-            Commit: ${{ github.sha }}
-            Trigger: ${{ github.event_name }}
-          artifacts: "dist/*.tar.gz"
-          allowUpdates: true
-          replacesArtifacts: true
-          removeArtifacts: true
-          prerelease: true
-          makeLatest: false
+
+  # build-macos-x64:
+  #   runs-on: macos-13
+  #   steps:
+  #     - uses: actions/checkout@v5
+  #     - name: Setup Homebrew dependencies
+  #       run: |
+  #         brew update
+  #         brew install nasm yasm pkg-config
+  #     - name: Build
+  #       run: |
+  #         echo "Building macos-x64..."
+  #         chmod +x ./build_macos.sh
+  #         ./build_macos.sh x86_64
+  #         ls -lah out/
+  #     - name: Upload macOS x64 artifact
+  #       uses: actions/upload-artifact@v6
+  #       with:
+  #         name: ffmpeg-macos-x86_64
+  #         path: out/ffmpeg-macos-x86_64.tar.gz
+  #         if-no-files-found: error
+  #         retention-days: 2
+
+  # build-macos-aarch64:
+  #   runs-on: macos-14
+  #   steps:
+  #     - uses: actions/checkout@v5
+  #     - name: Setup Homebrew dependencies
+  #       run: |
+  #         brew update
+  #         brew install nasm yasm pkg-config
+  #     - name: Build
+  #       run: |
+  #         echo "Building macos-aarch64..."
+  #         chmod +x ./build_macos.sh
+  #         ./build_macos.sh aarch64
+  #         ls -lah out/
+  #     - name: Upload macOS aarch64 artifact
+  #       uses: actions/upload-artifact@v6
+  #       with:
+  #         name: ffmpeg-macos-aarch64
+  #         path: out/ffmpeg-macos-aarch64.tar.gz
+  #         if-no-files-found: error
+  #         retention-days: 2
+
+  # publish-nightly:
+  #   needs:
+  #     - build-linux-x64
+  #     - build-linux-aarch64
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Download x64 artifact
+  #       uses: actions/download-artifact@v8
+  #       with:
+  #         name: ffmpeg-linux-x86_64
+  #         path: dist
+  #     - name: Download aarch64 artifact
+  #       uses: actions/download-artifact@v8
+  #       with:
+  #         name: ffmpeg-linux-aarch64
+  #         path: dist
+  #     - name: Show downloaded files
+  #       run: ls -lah dist
+  #     - name: Publish Nightly Release
+  #       uses: ncipollo/release-action@v1
+  #       with:
+  #         tag: nightly
+  #         name: Nightly Build
+  #         body: |
+  #           Automated nightly build.
+  #           Commit: ${{ github.sha }}
+  #           Trigger: ${{ github.event_name }}
+  #         artifacts: "dist/*.tar.gz"
+  #         allowUpdates: true
+  #         replacesArtifacts: true
+  #         removeArtifacts: true
+  #         prerelease: true
+  #         makeLatest: false
