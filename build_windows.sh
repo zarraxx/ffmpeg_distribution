@@ -22,5 +22,6 @@ export ARCHIVE_DIR=$ARCHIVE_DIR
 export PATH="/opt/cmake/cmake-3.27.9-windows-x86_64/bin:$PATH"
 cmake --version
 
-$ROOT/scripts/ffmpeg_win32.sh
+chmod +x $ROOT/script/ffmpeg_win32.sh
+$ROOT/script/ffmpeg_win32.sh
 tar -czvf $OUTPUT_DIR/ffmpeg-windows-x86_64.tar.gz -C "$(dirname "$DEST_DIR")" "$(basename "$DEST_DIR")"
