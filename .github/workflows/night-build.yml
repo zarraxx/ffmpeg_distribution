@@ -23,6 +23,7 @@ jobs:
           name: ffmpeg-linux-x86_64
           path: out/ffmpeg-linux-x86_64.tar.gz
           if-no-files-found: error
+          retention-days: 2
   build-linux-aarch64:
     runs-on: ubuntu-24.04-arm
     steps:
@@ -38,6 +39,7 @@ jobs:
           name: ffmpeg-linux-aarch64
           path: out/ffmpeg-linux-aarch64.tar.gz
           if-no-files-found: error
+          retention-days: 2
 
   publish-nightly:
     needs:
