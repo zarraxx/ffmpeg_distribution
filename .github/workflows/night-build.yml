@@ -45,7 +45,7 @@ jobs:
        - uses: actions/download-artifact@v8
          with:
           name: ffmpeg-source-${{ needs.prepare-source.outputs.ffmpeg_version }}
-          path: .
+          path: ./archive
        - run: ls -la 
        - name: Build
          run: |
@@ -68,7 +68,7 @@ jobs:
        - uses: actions/download-artifact@v8
          with:
           name: ffmpeg-source-${{ needs.prepare-source.outputs.ffmpeg_version }}
-          path: .
+          path: ./archive
        - run: ls -la 
        - name: Build
          run: |
@@ -91,7 +91,7 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: ffmpeg-source-${{ needs.prepare-source.outputs.ffmpeg_version }}
-          path: .
+          path: ./archive
       - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
         with:
