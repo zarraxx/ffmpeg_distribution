@@ -89,6 +89,18 @@ find_font_file() {
     return 1
 }
 
+normalize_font_file_for_ffmpeg() {
+    local font_path=$1
+
+    font_path="${font_path//\\//}"
+
+    if [[ "$font_path" =~ ^[A-Za-z]:/ ]] && command -v cygpath >/dev/null 2>&1; then
+        font_path="$(cygpath -u "$font_path" 2>/dev/null || printf '%s' "$font_path")"
+    fi
+
+    printf '%s\n' "$font_path"
+}
+
 encoder_available() {
     local encoder_name=$1
 
@@ -133,6 +145,7 @@ if [ -z "$FONT_FILE" ]; then
     echo "No suitable font file found for drawtext"
     exit 1
 fi
+FONT_FILE="$(normalize_font_file_for_ffmpeg "$FONT_FILE")"
 
 echo "Generating video test inputs under $INPUT_DIR"
 INPUT_COUNT=0

@@ -62,6 +62,20 @@ generate_tone() {
         "$output_file"
 }
 
+generate_optional_tone() {
+    local output_file=$1
+    local description=$2
+    shift 2
+
+    if generate_tone "$output_file" "$@"; then
+        return 0
+    fi
+
+    rm -f "$output_file"
+    echo "Skipping ${description}: system ffmpeg could not encode it"
+    return 1
+}
+
 echo "Generating sine-wave test inputs under $INPUT_DIR"
 generate_tone "$INPUT_DIR/sine.wav"  -c:a pcm_s16le
 
@@ -70,14 +84,16 @@ generate_tone "$INPUT_DIR/sine.mp3"  -c:a "$MP3_ENCODER" -b:a 128k
 generate_tone "$INPUT_DIR/sine.aac"  -c:a aac -b:a 128k
 generate_tone "$INPUT_DIR/sine.flac" -c:a flac
 
-if OGG_ENCODER="$(select_encoder libvorbis vorbis)"; then
-    generate_tone "$INPUT_DIR/sine.ogg" -c:a "$OGG_ENCODER" -b:a 128k
+if [ "$(uname -s)" = "Darwin" ]; then
+    echo "Skipping OGG input generation on macOS: Homebrew ffmpeg Vorbis encoder is not reliable here"
+elif OGG_ENCODER="$(select_encoder libvorbis vorbis)"; then
+    generate_optional_tone "$INPUT_DIR/sine.ogg" "OGG input generation" -c:a "$OGG_ENCODER" -b:a 128k
 else
     echo "Skipping OGG input generation: no Vorbis encoder in system ffmpeg"
 fi
 
 if OPUS_ENCODER="$(select_encoder libopus opus)"; then
-    generate_tone "$INPUT_DIR/sine.opus" -c:a "$OPUS_ENCODER" -b:a 128k
+    generate_optional_tone "$INPUT_DIR/sine.opus" "Opus input generation" -c:a "$OPUS_ENCODER" -b:a 128k
 else
     echo "Skipping Opus input generation: no Opus encoder in system ffmpeg"
 fi
