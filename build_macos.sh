@@ -21,7 +21,7 @@ export ARCHIVE_DIR=$ARCHIVE_DIR
 ls -la $ARCHIVE_DIR
 
 echo "Building for macOS $ARCH"
-export PATH="/opt/cmake/cmake-3.27.9-macos-universal/CMake.app/Contents/bin:$PATH"
+export PATH="$HOME/.local/cmake/cmake-3.27.9-macos-universal/CMake.app/Contents/bin:$PATH"
 cmake --version
 
 chmod +x $ROOT/script/ffmpeg_darwin.sh
