@@ -5,10 +5,13 @@ IMAGE=registry.cn-hangzhou.aliyuncs.com/zarra/centos:x-tools-base
 ROOT="$(cd $(dirname "$(realpath "$0")");pwd)"
 #PARENT="$(cd $ROOT/..;pwd)"
 ARCH=`uname -m`
+
+ARCHIVE_DIR=$ROOT/archive
 WORKSPACE=$ROOT/build
 DEST_DIR=$ROOT/dist/linux-$ARCH
 OUTPUT_DIR=$ROOT/out
 
+mkdir -p $ARCHIVE_DIR
 mkdir -p $DEST_DIR
 mkdir -p $OUTPUT_DIR
 rm -rf $WORKSPACE
@@ -24,7 +27,8 @@ fi
 
 $DOCKER run -it --rm --name=$NAME  \
         -e LINES=50 -e COLUMNS=160 \
-        -v $WORKSPACE:/workspace:z,U \
+        -v $WORKSPACE:/workspace/build:z,U \
+        -v $ARCHIVE_DIR:/workspace/archive:z,U \
         -v $DEST_DIR:/opt/x-tools/dist:z,U \
         -v $ROOT/script:/script:z,U \
     	$IMAGE /bin/bash -c "/script/ffmpeg_centos_devtoolset.sh"

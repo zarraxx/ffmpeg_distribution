@@ -4,7 +4,7 @@ set -e
 ROOT="$(cd $(dirname "$(realpath "$0")");pwd)"
 ARCH=`uname -m`
 WORKSPACE=$ROOT/build/workspace
-ARCHIVE_DIR=$ROOT/build/archive
+ARCHIVE_DIR=$ROOT/archive
 DEST_DIR=$ROOT/dist/windowx-x86_64
 OUTPUT_DIR=$ROOT/out
 
