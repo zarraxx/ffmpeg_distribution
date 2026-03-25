@@ -31,6 +31,16 @@ download_file() {
     fi
 }
 
+get_cpu_count() {
+    if command -v nproc >/dev/null 2>&1; then
+        nproc
+    elif command -v sysctl >/dev/null 2>&1; then
+        sysctl -n hw.ncpu
+    else
+        echo 4
+    fi
+}
+
 build_lame(){
     download_file "lame-$LAME_VERSION.tar.gz"
     cd $BUILD_DIR
@@ -40,7 +50,7 @@ build_lame(){
 
     ./configure --prefix=$DEST_DIR  --disable-shared --enable-static --disable-frontend
 
-    make -j$(nproc)
+    make -j$(get_cpu_count)
     make install
 }
 
@@ -58,7 +68,7 @@ build_ogg(){
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
     -DCMAKE_INSTALL_LIBDIR=lib  \
     -DCMAKE_INSTALL_PREFIX=$DEST_DIR ..
-    make -j$(nproc)
+    make -j$(get_cpu_count)
     make install
 }
 
@@ -76,7 +86,7 @@ build_vorbis(){
     -DCMAKE_INSTALL_LIBDIR=lib  \
     -DCMAKE_INSTALL_PREFIX=$DEST_DIR \
     ${VORBIS_CMAKE_EXTRA} ..
-    make -j$(nproc)
+    make -j$(get_cpu_count)
     make install
 }
 
@@ -89,7 +99,7 @@ build_vorbis_autotolls(){
 
     ./autogen.sh
     ./configure --prefix=$DEST_DIR  --disable-shared --enable-static --disable-frontend
-    make -j$(nproc)
+    make -j$(get_cpu_count)
     make install
 }
 
@@ -107,7 +117,7 @@ build_opus(){
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
     -DCMAKE_INSTALL_LIBDIR=lib  \
     -DCMAKE_INSTALL_PREFIX=$DEST_DIR ..
-    make -j$(nproc)
+    make -j$(get_cpu_count)
     make install
 }
 
@@ -119,7 +129,7 @@ build_x264(){
     cd x264-stable
 
     ./configure --prefix=$DEST_DIR --enable-pic --enable-static --disable-shared --disable-cli
-    make -j$(nproc)
+    make -j$(get_cpu_count)
     make install
 }
 
@@ -133,7 +143,7 @@ build_x265(){
     rm -rf _build && mkdir -p _build && cd _build
     cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release  -DCMAKE_INSTALL_LIBDIR=lib \
     -DCMAKE_INSTALL_PREFIX=$DEST_DIR -DENABLE_SHARED=0 -DENABLE_CLI=0 -DENABLE_PIC=1 ${X265_CMAKE_EXTRA} ../source
-    make -j$(nproc)
+    make -j$(get_cpu_count)
     make install
 }
 
@@ -154,7 +164,7 @@ build_dav1d(){
         -Ddefault_library=static \
         -Db_pie=false \
         -Db_staticpic=true
-    ninja -j$(nproc)
+    ninja -j$(get_cpu_count)
     ninja install
 }
 
@@ -256,6 +266,6 @@ build_ffmpeg(){
     --enable-bsf=hevc_mp4toannexb
 
 
-    make -j$(nproc)
+    make -j$(get_cpu_count)
     make install-libs install-headers
 }
