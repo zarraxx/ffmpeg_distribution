@@ -38,6 +38,7 @@
 | `prepare.sh` | 预下载源码压缩包 |
 | `clean.sh` | 清理构建产物 |
 | `version.sh` | 输出 FFmpeg 版本 |
+| `example/audio_convert` | 使用静态 FFmpeg SDK 的音频转码 demo，输出 `128 kbps / 48 kHz / 双声道 MP3` |
 | `script/ffmpeg.sh` | 通用下载、依赖编译和 FFmpeg 配置逻辑 |
 | `script/ffmpeg_centos_devtoolset.sh` | Linux 容器内构建逻辑 |
 | `script/ffmpeg_darwin.sh` | macOS 构建逻辑 |
@@ -126,6 +127,8 @@ Windows:
 ./build_windows.sh
 ```
 
+说明：三个 `build_*.sh` 在完成 FFmpeg 静态库构建后，会继续执行 `example/audio_convert` 的 CMake 构建。
+
 ### 4. 清理产物
 
 ```bash
@@ -166,6 +169,43 @@ out/ffmpeg-linux-x86_64.tar.gz
 - 压缩包：`out/ffmpeg-windows-x86_64.tar.gz`
 
 说明：目录名当前脚本中写的是 `windowx-x86_64`，README 保持与脚本实际行为一致。
+
+## Example: audio_convert
+
+`example/audio_convert` 是一个基于 FFmpeg C API 的最小转码示例，用于把输入音频转换成：
+
+- `128 kbps`
+- `48 kHz`
+- `双声道`
+- `MP3`
+
+直接使用构建好的静态 SDK 进行编译：
+
+Linux:
+
+```bash
+cmake -S example/audio_convert -B build/audio_convert-linux -DFFMPEG_ROOT=$PWD/dist/linux-$(uname -m)/ffmpeg -DCMAKE_BUILD_TYPE=Release
+cmake --build build/audio_convert-linux --parallel
+./build/audio_convert-linux/bin/audio_convert input.wav output.mp3
+```
+
+macOS:
+
+```bash
+ARCH=$(uname -m)
+if [ "$ARCH" = "arm64" ]; then ARCH=aarch64; fi
+cmake -S example/audio_convert -B build/audio_convert-darwin -DFFMPEG_ROOT=$PWD/dist/darwin-$ARCH/ffmpeg -DCMAKE_BUILD_TYPE=Release
+cmake --build build/audio_convert-darwin --parallel
+./build/audio_convert-darwin/bin/audio_convert input.wav output.mp3
+```
+
+Windows:
+
+```bash
+cmake -S example/audio_convert -B build/audio_convert-windows -DFFMPEG_ROOT=$PWD/dist/windowx-x86_64/ffmpeg -DCMAKE_BUILD_TYPE=Release
+cmake --build build/audio_convert-windows --parallel
+./build/audio_convert-windows/bin/audio_convert.exe input.wav output.mp3
+```
 
 ## SDK 内容
 

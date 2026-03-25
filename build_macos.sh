@@ -38,3 +38,9 @@ if [ -n "$PACKAGE_SUFFIX" ]; then
 fi
 
 tar -czvf $OUTPUT_DIR/ffmpeg-darwin-${ARCH}${PACKAGE_SUFFIX_PART}.tar.gz -C "$(dirname "$DEST_DIR")" "$(basename "$DEST_DIR")"
+
+DEMO_BUILD_DIR=$ROOT/build/audio_convert-darwin-$ARCH
+echo "Building example/audio_convert with CMake..."
+cmake -S $ROOT/example/audio_convert -B $DEMO_BUILD_DIR -DFFMPEG_ROOT=$DEST_DIR/ffmpeg -DCMAKE_BUILD_TYPE=Release
+cmake --build $DEMO_BUILD_DIR --parallel
+echo "audio_convert demo built at: $DEMO_BUILD_DIR/bin/audio_convert"
