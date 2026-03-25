@@ -10,17 +10,21 @@ permissions:
 jobs:
   prepare-source:
     runs-on: ubuntu-latest
+    outputs:
+      ffmpeg_version: ${{ steps.get_version.outputs.ffmpeg_version }}
     steps:
       - uses: actions/checkout@v5
       - name: Load version into env
+        id: get_version
         run: |
           VERSION=$(bash ./version.sh)
           echo "FFMPEG_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "ffmpeg_version=$VERSION" >> "$GITHUB_OUTPUT"
       - name: Cache source tarball
         uses: actions/cache@v5
         with:
             path: ~/archive
-            key: ffmpeg-source-${{ env.FFMPEG_VERSION }}
+            key: ffmpeg-source-${{ steps.get_version.outputs.ffmpeg_version }}
       - name: Download source tarball
         run: |
           mkdir -p archive
@@ -28,7 +32,7 @@ jobs:
       - name: Upload source tarball
         uses: actions/upload-artifact@v6
         with:
-          name: ffmpeg-source-${{ env.FFMPEG_VERSION }}
+          name: ffmpeg-source-${{ steps.get_version.outputs.ffmpeg_version }}
           path: archive/*.tar.*
 
   build-linux-x64:
@@ -38,7 +42,7 @@ jobs:
        - uses: actions/checkout@v5
        - uses: actions/download-artifact@v8
          with:
-          name: ffmpeg-source-${{ env.FFMPEG_VERSION }}
+          name: ffmpeg-source-${{ needs.prepare-source.outputs.ffmpeg_version }}
           path: .
        - run: ls -lh archive/*.tar.*
        - name: Build
@@ -61,7 +65,7 @@ jobs:
        - uses: actions/checkout@v5
        - uses: actions/download-artifact@v8
          with:
-          name: ffmpeg-source-${{ env.FFMPEG_VERSION }}
+          name: ffmpeg-source-${{ needs.prepare-source.outputs.ffmpeg_version }}
           path: .
        - run: ls -lh archive/*.tar.*
        - name: Build
@@ -84,7 +88,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/download-artifact@v8
         with:
-          name: ffmpeg-source-${{ env.FFMPEG_VERSION }}
+          name: ffmpeg-source-${{ needs.prepare-source.outputs.ffmpeg_version }}
           path: .
       - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
