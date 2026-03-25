@@ -25,13 +25,19 @@ jobs:
         id: release_meta
         shell: bash
         run: |
-          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" =~ ^v[0-9]+(\.[0-9]+)*$ ]]; then
+          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" =~ ^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?$ ]]; then
             PACKAGE_SUFFIX="${GITHUB_REF_NAME}"
             RELEASE_TAG="${GITHUB_REF_NAME}"
             RELEASE_NAME="Release ${GITHUB_REF_NAME}"
-            RELEASE_PRERELEASE=false
-            RELEASE_MAKE_LATEST=true
-            TRIGGER_NOTE="Triggered by tag push: ${GITHUB_REF_NAME}"
+            if [[ "${GITHUB_REF_NAME}" =~ -rc[0-9]+$ ]]; then
+              RELEASE_PRERELEASE=true
+              RELEASE_MAKE_LATEST=false
+              TRIGGER_NOTE="Triggered by release candidate tag push: ${GITHUB_REF_NAME}"
+            else
+              RELEASE_PRERELEASE=false
+              RELEASE_MAKE_LATEST=true
+              TRIGGER_NOTE="Triggered by tag push: ${GITHUB_REF_NAME}"
+            fi
           else
             BUILD_DATE="$(TZ=Asia/Shanghai date +%Y%m%d)"
             PACKAGE_SUFFIX="nightbuild-${BUILD_DATE}"
