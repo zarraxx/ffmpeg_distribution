@@ -25,4 +25,10 @@ cmake --version
 
 chmod +x $ROOT/script/ffmpeg_win32.sh
 $ROOT/script/ffmpeg_win32.sh
-tar -czvf $OUTPUT_DIR/ffmpeg-windows-x86_64.tar.gz -C "$(dirname "$DEST_DIR")" "$(basename "$DEST_DIR")"
+
+PACKAGE_SUFFIX_PART=""
+if [ -n "$PACKAGE_SUFFIX" ]; then
+    PACKAGE_SUFFIX_PART="-$PACKAGE_SUFFIX"
+fi
+
+tar -czvf $OUTPUT_DIR/ffmpeg-windows-x86_64${PACKAGE_SUFFIX_PART}.tar.gz -C "$(dirname "$DEST_DIR")" "$(basename "$DEST_DIR")"

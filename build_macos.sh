@@ -31,4 +31,10 @@ cmake --version
 
 chmod +x $ROOT/script/ffmpeg_darwin.sh
 $ROOT/script/ffmpeg_darwin.sh
-tar -czvf $OUTPUT_DIR/ffmpeg-darwin-$ARCH.tar.gz -C "$(dirname "$DEST_DIR")" "$(basename "$DEST_DIR")"
+
+PACKAGE_SUFFIX_PART=""
+if [ -n "$PACKAGE_SUFFIX" ]; then
+    PACKAGE_SUFFIX_PART="-$PACKAGE_SUFFIX"
+fi
+
+tar -czvf $OUTPUT_DIR/ffmpeg-darwin-${ARCH}${PACKAGE_SUFFIX_PART}.tar.gz -C "$(dirname "$DEST_DIR")" "$(basename "$DEST_DIR")"

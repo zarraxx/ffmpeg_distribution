@@ -33,5 +33,9 @@ $DOCKER run -it --rm --name=$NAME  \
         -v $ROOT/script:/script:z,U \
     	$IMAGE /bin/bash -c "/script/ffmpeg_centos_devtoolset.sh"
 
+PACKAGE_SUFFIX_PART=""
+if [ -n "$PACKAGE_SUFFIX" ]; then
+    PACKAGE_SUFFIX_PART="-$PACKAGE_SUFFIX"
+fi
 
-tar -czvf $OUTPUT_DIR/ffmpeg-linux-$ARCH.tar.gz -C "$(dirname "$DEST_DIR")" "$(basename "$DEST_DIR")"
+tar -czvf $OUTPUT_DIR/ffmpeg-linux-${ARCH}${PACKAGE_SUFFIX_PART}.tar.gz -C "$(dirname "$DEST_DIR")" "$(basename "$DEST_DIR")"
