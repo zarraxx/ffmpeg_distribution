@@ -29,6 +29,7 @@ if ! command -v ffprobe >/dev/null 2>&1; then
 fi
 
 ENCODERS_OUTPUT="$(ffmpeg -hide_banner -encoders 2>/dev/null || true)"
+FILTERS_OUTPUT="$(ffmpeg -hide_banner -filters 2>/dev/null || true)"
 
 find_font_file() {
     local candidate
@@ -101,6 +102,12 @@ normalize_font_file_for_ffmpeg() {
     printf '%s\n' "$font_path"
 }
 
+filter_available() {
+    local filter_name=$1
+
+    grep -Eq "[[:space:]]${filter_name}[[:space:]]" <<<"$FILTERS_OUTPUT"
+}
+
 encoder_available() {
     local encoder_name=$1
 
@@ -126,12 +133,40 @@ generate_video() {
     local font_file=$1
     shift
 
+    if [ "${USE_DRAWTEXT:-0}" = "1" ]; then
+        ffmpeg -hide_banner -loglevel error -y \
+            -f lavfi -i "color=c=black:s=1280x720:r=30:d=3" \
+            -f lavfi -i "sine=frequency=1000:sample_rate=48000:duration=3" \
+            -shortest \
+            -pix_fmt yuv420p \
+            -vf "drawtext=fontfile='${font_file}':text='DemoVideo':fontcolor=white:fontsize=54:x=(w-text_w)/2:y=(h-text_h)/2,format=yuv420p" \
+            -ac 2 \
+            -ar 48000 \
+            "$@" \
+            "$output_file"
+        return 0
+    fi
+
+    if filter_available testsrc2; then
+        ffmpeg -hide_banner -loglevel error -y \
+            -f lavfi -i "testsrc2=s=1280x720:r=30:d=3" \
+            -f lavfi -i "sine=frequency=1000:sample_rate=48000:duration=3" \
+            -shortest \
+            -pix_fmt yuv420p \
+            -vf "format=yuv420p" \
+            -ac 2 \
+            -ar 48000 \
+            "$@" \
+            "$output_file"
+        return 0
+    fi
+
     ffmpeg -hide_banner -loglevel error -y \
         -f lavfi -i "color=c=black:s=1280x720:r=30:d=3" \
         -f lavfi -i "sine=frequency=1000:sample_rate=48000:duration=3" \
         -shortest \
         -pix_fmt yuv420p \
-        -vf "drawtext=fontfile='${font_file}':text='DemoVideo':fontcolor=white:fontsize=54:x=(w-text_w)/2:y=(h-text_h)/2,format=yuv420p" \
+        -vf "format=yuv420p" \
         -ac 2 \
         -ar 48000 \
         "$@" \
@@ -140,12 +175,20 @@ generate_video() {
 
 mkdir -p "$INPUT_DIR" "$OUTPUT_DIR"
 
-FONT_FILE="$(find_font_file || true)"
-if [ -z "$FONT_FILE" ]; then
-    echo "No suitable font file found for drawtext"
-    exit 1
+USE_DRAWTEXT=0
+FONT_FILE=""
+if filter_available drawtext; then
+    FONT_FILE="$(find_font_file || true)"
+    if [ -n "$FONT_FILE" ]; then
+        FONT_FILE="$(normalize_font_file_for_ffmpeg "$FONT_FILE")"
+        USE_DRAWTEXT=1
+        echo "Using drawtext overlay for test video generation"
+    else
+        echo "drawtext is available but no suitable font was found; falling back to filter-only test video generation"
+    fi
+else
+    echo "drawtext filter is unavailable; falling back to filter-only test video generation"
 fi
-FONT_FILE="$(normalize_font_file_for_ffmpeg "$FONT_FILE")"
 
 echo "Generating video test inputs under $INPUT_DIR"
 INPUT_COUNT=0

@@ -39,12 +39,12 @@ build_vorbis
 build_opus
 build_x264
 
+export X265_CMAKE_EXTRA="-DENABLE_ASSEMBLY=OFF -DCC_HAS_FAST_MATH=FALSE"
 if [ "$(uname -m)" = "aarch64" ]; then
-  export X265_CMAKE_EXTRA="-DENABLE_ASSEMBLY=OFF -DCC_HAS_FAST_MATH=FALSE"
+ 
   export FFMPEG_CONFIG_EXTRA="$FFMPEG_CONFIG_EXTRA --disable-neon"
-else
-  export X265_CMAKE_EXTRA="-DCC_HAS_FAST_MATH=FALSE"
 fi
+
 build_x265
 build_dav1d
 build_ffmpeg
