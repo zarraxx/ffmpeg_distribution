@@ -3,6 +3,11 @@ set -e
 
 ROOT="$(cd $(dirname "$(realpath "$0")");pwd)"
 ARCH=`uname -m`
+
+if [ "$ARCH" = "arm64" ]; then
+    ARCH="aarch64"
+fi
+
 WORKSPACE=$ROOT/build/workspace
 ARCHIVE_DIR=$ROOT/archive
 DEST_DIR=$ROOT/dist/darwin-$ARCH
