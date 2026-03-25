@@ -38,7 +38,9 @@
 | `prepare.sh` | 预下载源码压缩包 |
 | `clean.sh` | 清理构建产物 |
 | `version.sh` | 输出 FFmpeg 版本 |
+| `example` | 基于静态 FFmpeg SDK 的示例工程入口 |
 | `example/audio_convert` | 使用静态 FFmpeg SDK 的音频转码 demo，输出 `128 kbps / 48 kHz / 双声道 MP3` |
+| `example/video_convert` | 使用静态 FFmpeg SDK 的视频转码 demo，输出 `720p MP4`，并把第一条音轨转成 `128 kbps / 48 kHz / 双声道 MP3` |
 | `script/ffmpeg.sh` | 通用下载、依赖编译和 FFmpeg 配置逻辑 |
 | `script/ffmpeg_centos_devtoolset.sh` | Linux 容器内构建逻辑 |
 | `script/ffmpeg_darwin.sh` | macOS 构建逻辑 |
@@ -127,7 +129,7 @@ Windows:
 ./build_windows.sh
 ```
 
-说明：三个 `build_*.sh` 在完成 FFmpeg 静态库构建后，会继续执行 `example/audio_convert` 的 CMake 构建。
+说明：三个 `build_*.sh` 在完成 FFmpeg 静态库构建后，会继续执行 `example/` 的 CMake 构建，并产出 `audio_convert` 和 `video_convert` 两个示例程序。
 
 ### 4. 清理产物
 
@@ -170,7 +172,39 @@ out/ffmpeg-linux-x86_64.tar.gz
 
 说明：目录名当前脚本中写的是 `windowx-x86_64`，README 保持与脚本实际行为一致。
 
-## Example: audio_convert
+## Example
+
+`example/` 是统一的示例工程入口，会同时构建：
+
+- `audio_convert`
+- `video_convert`
+
+直接使用构建好的静态 SDK 进行编译：
+
+Linux:
+
+```bash
+cmake -S example -B build/example-linux -DFFMPEG_ROOT=$PWD/dist/linux-$(uname -m)/ffmpeg -DCMAKE_BUILD_TYPE=Release
+cmake --build build/example-linux --parallel
+```
+
+macOS:
+
+```bash
+ARCH=$(uname -m)
+if [ "$ARCH" = "arm64" ]; then ARCH=aarch64; fi
+cmake -S example -B build/example-darwin -DFFMPEG_ROOT=$PWD/dist/darwin-$ARCH/ffmpeg -DCMAKE_BUILD_TYPE=Release
+cmake --build build/example-darwin --parallel
+```
+
+Windows:
+
+```bash
+cmake -S example -B build/example-windows -DFFMPEG_ROOT=$PWD/dist/windowx-x86_64/ffmpeg -DCMAKE_BUILD_TYPE=Release
+cmake --build build/example-windows --parallel
+```
+
+### audio_convert
 
 `example/audio_convert` 是一个基于 FFmpeg C API 的最小转码示例，用于把输入音频转换成：
 
@@ -179,32 +213,68 @@ out/ffmpeg-linux-x86_64.tar.gz
 - `双声道`
 - `MP3`
 
-直接使用构建好的静态 SDK 进行编译：
-
 Linux:
 
 ```bash
-cmake -S example/audio_convert -B build/audio_convert-linux -DFFMPEG_ROOT=$PWD/dist/linux-$(uname -m)/ffmpeg -DCMAKE_BUILD_TYPE=Release
-cmake --build build/audio_convert-linux --parallel
-./build/audio_convert-linux/bin/audio_convert input.wav output.mp3
+./build/example-linux/bin/audio_convert input.wav output.mp3
 ```
 
 macOS:
 
 ```bash
-ARCH=$(uname -m)
-if [ "$ARCH" = "arm64" ]; then ARCH=aarch64; fi
-cmake -S example/audio_convert -B build/audio_convert-darwin -DFFMPEG_ROOT=$PWD/dist/darwin-$ARCH/ffmpeg -DCMAKE_BUILD_TYPE=Release
-cmake --build build/audio_convert-darwin --parallel
-./build/audio_convert-darwin/bin/audio_convert input.wav output.mp3
+./build/example-darwin/bin/audio_convert input.wav output.mp3
 ```
 
 Windows:
 
 ```bash
-cmake -S example/audio_convert -B build/audio_convert-windows -DFFMPEG_ROOT=$PWD/dist/windowx-x86_64/ffmpeg -DCMAKE_BUILD_TYPE=Release
-cmake --build build/audio_convert-windows --parallel
-./build/audio_convert-windows/bin/audio_convert.exe input.wav output.mp3
+./build/example-windows/bin/audio_convert.exe input.wav output.mp3
+```
+
+使用系统 `ffmpeg`/`ffprobe` 生成标准正弦波输入并批量验证 `audio_convert`：
+
+```bash
+chmod +x example/audio_convert/test_audio_convert.sh
+./example/audio_convert/test_audio_convert.sh ./build/example-linux/bin/audio_convert
+```
+
+### video_convert
+
+`example/video_convert` 会把输入视频转换成：
+
+- `1280x720`
+- `MP4`
+- 视频编码：`H.264`
+- 如果存在音轨：仅保留第一条音轨，并转成 `128 kbps / 48 kHz / 双声道 MP3`
+
+Linux:
+
+```bash
+./build/example-linux/bin/video_convert input.mkv output.mp4
+```
+
+macOS:
+
+```bash
+./build/example-darwin/bin/video_convert input.mkv output.mp4
+```
+
+Windows:
+
+```bash
+./build/example-windows/bin/video_convert.exe input.mkv output.mp4
+```
+
+使用系统 `ffmpeg`/`ffprobe` 生成空画面加标准正弦波的测试视频，并批量验证 `video_convert`。
+默认会覆盖：
+
+- `AVI + x264`
+- `MP4 + x265`
+- `MKV + AV1`
+
+```bash
+chmod +x example/video_convert/test_video_convert.sh
+./example/video_convert/test_video_convert.sh ./build/example-linux/bin/video_convert
 ```
 
 ## SDK 内容

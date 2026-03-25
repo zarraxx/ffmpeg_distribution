@@ -1,0 +1,2 @@
+add_executable(video_convert main.c)
+target_link_libraries(video_convert PRIVATE ffmpeg_example_common)

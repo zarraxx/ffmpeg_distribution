@@ -40,8 +40,28 @@ fi
 
 tar -czvf $OUTPUT_DIR/ffmpeg-linux-${ARCH}${PACKAGE_SUFFIX_PART}.tar.gz -C "$(dirname "$DEST_DIR")" "$(basename "$DEST_DIR")"
 
-DEMO_BUILD_DIR=$ROOT/build/audio_convert-linux-$ARCH
-echo "Building example/audio_convert with CMake..."
-cmake -S $ROOT/example/audio_convert -B $DEMO_BUILD_DIR -DFFMPEG_ROOT=$DEST_DIR/ffmpeg -DCMAKE_BUILD_TYPE=Release
+DEMO_BUILD_DIR=$ROOT/build/example-linux-$ARCH
+echo "Building examples with CMake..."
+cmake -S $ROOT/example -B $DEMO_BUILD_DIR -DFFMPEG_ROOT=$DEST_DIR/ffmpeg -DCMAKE_BUILD_TYPE=Release
 cmake --build $DEMO_BUILD_DIR --parallel
 echo "audio_convert demo built at: $DEMO_BUILD_DIR/bin/audio_convert"
+echo "video_convert demo built at: $DEMO_BUILD_DIR/bin/video_convert"
+
+if [ "$(id -u)" -eq 0 ]; then
+    SUDO=""
+else
+    SUDO="sudo"
+fi
+
+echo "Installing system ffmpeg for example tests..."
+$SUDO apt-get update
+$SUDO apt-get install -y ffmpeg
+
+chmod +x $ROOT/example/audio_convert/test_audio_convert.sh
+chmod +x $ROOT/example/video_convert/test_video_convert.sh
+
+echo "Running audio_convert tests..."
+$ROOT/example/audio_convert/test_audio_convert.sh $DEMO_BUILD_DIR/bin/audio_convert $ROOT/build/audio_convert-test-linux-$ARCH
+
+echo "Running video_convert tests..."
+$ROOT/example/video_convert/test_video_convert.sh $DEMO_BUILD_DIR/bin/video_convert $ROOT/build/video_convert-test-linux-$ARCH

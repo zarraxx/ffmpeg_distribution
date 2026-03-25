@@ -41,6 +41,23 @@ get_cpu_count() {
     fi
 }
 
+normalize_pkgconfig_metadata() {
+    local pkgconfig_dir
+    local pc_file
+    local content
+    local reloc_prefix='${pcfiledir}/../..'
+
+    for pkgconfig_dir in "$DEST_DIR/lib/pkgconfig" "$DEST_DIR/lib64/pkgconfig"; do
+        [ -d "$pkgconfig_dir" ] || continue
+
+        find "$pkgconfig_dir" -maxdepth 1 -type f -name '*.pc' | while IFS= read -r pc_file; do
+            content=$(cat "$pc_file")
+            content=${content//"$DEST_DIR"/$reloc_prefix}
+            printf '%s' "$content" > "$pc_file"
+        done
+    done
+}
+
 build_lame(){
     download_file "lame-$LAME_VERSION.tar.gz"
     cd $BUILD_DIR
@@ -48,7 +65,7 @@ build_lame(){
     tar xvf $ARCHIVE_DIR/lame-$LAME_VERSION.tar.gz
     cd lame-$LAME_VERSION
 
-    ./configure --prefix=$DEST_DIR  --disable-shared --enable-static --disable-frontend
+    CFLAGS="${CFLAGS:+$CFLAGS }-fPIC" ./configure --prefix=$DEST_DIR  --disable-shared --enable-static --disable-frontend
 
     make -j$(get_cpu_count)
     make install
@@ -128,7 +145,7 @@ build_x264(){
     tar xvf $ARCHIVE_DIR/x264-$X264_VERSION.tar.bz2
     cd x264-stable
 
-    ./configure --prefix=$DEST_DIR --enable-pic --enable-static --disable-shared --disable-cli
+    ./configure --prefix=$DEST_DIR --enable-pic --enable-static --disable-shared --disable-cli ${X264_CMAKE_EXTRA}
     make -j$(get_cpu_count)
     make install
 }
@@ -272,4 +289,5 @@ build_ffmpeg(){
 
     make -j$(get_cpu_count)
     make install-libs install-headers
+    normalize_pkgconfig_metadata
 }

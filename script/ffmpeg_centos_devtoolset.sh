@@ -13,6 +13,11 @@ source /opt/rh/devtoolset-10/enable
 
 export PATH=/opt/x-tools/utils/bin:$PATH
 
+# Build a Linux SDK that can be linked outside the CentOS container.
+# x264/x265 enable -ffast-math by default, which pulls in glibc __*_finite
+# symbols and makes the static SDK fragile when used on the host toolchain.
+export X264_CMAKE_EXTRA='--extra-cflags=-fno-fast-math -fno-finite-math-only -fno-unsafe-math-optimizations'
+
 
 export BUILD_DIR=/workspace/build
 export DEST_DIR=/opt/x-tools/dist/ffmpeg
@@ -32,9 +37,9 @@ build_opus
 build_x264
 
 if [ "$(uname -m)" = "aarch64" ]; then
-  export X265_CMAKE_EXTRA="-DENABLE_ASSEMBLY=OFF"
+  export X265_CMAKE_EXTRA="-DENABLE_ASSEMBLY=OFF -DCC_HAS_FAST_MATH=FALSE"
 else
-  export X265_CMAKE_EXTRA=""
+  export X265_CMAKE_EXTRA="-DCC_HAS_FAST_MATH=FALSE"
 fi
 build_x265
 build_dav1d

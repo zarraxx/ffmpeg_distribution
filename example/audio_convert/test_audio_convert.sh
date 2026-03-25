@@ -1,0 +1,83 @@
+#!/bin/bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$(realpath "$0")")"; pwd)"
+
+if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+    echo "Usage: $0 <audio_convert_binary> [work_dir]"
+    exit 1
+fi
+
+AUDIO_CONVERT_BIN="$(realpath "$1")"
+WORK_DIR="${2:-$ROOT/test_work}"
+INPUT_DIR="$WORK_DIR/inputs"
+OUTPUT_DIR="$WORK_DIR/outputs"
+
+if [ ! -x "$AUDIO_CONVERT_BIN" ]; then
+    echo "audio_convert binary not found or not executable: $AUDIO_CONVERT_BIN"
+    exit 1
+fi
+
+if ! command -v ffmpeg >/dev/null 2>&1; then
+    echo "ffmpeg not found in PATH"
+    exit 1
+fi
+
+if ! command -v ffprobe >/dev/null 2>&1; then
+    echo "ffprobe not found in PATH"
+    exit 1
+fi
+
+mkdir -p "$INPUT_DIR" "$OUTPUT_DIR"
+
+generate_tone() {
+    local output_file=$1
+    shift
+
+    ffmpeg -hide_banner -loglevel error -y \
+        -f lavfi -i "sine=frequency=1000:sample_rate=48000:duration=3" \
+        -af "aformat=sample_rates=48000:sample_fmts=s16:channel_layouts=stereo" \
+        "$@" \
+        "$output_file"
+}
+
+echo "Generating sine-wave test inputs under $INPUT_DIR"
+generate_tone "$INPUT_DIR/sine.wav"  -c:a pcm_s16le
+generate_tone "$INPUT_DIR/sine.mp3"  -c:a libmp3lame -b:a 128k
+generate_tone "$INPUT_DIR/sine.aac"  -c:a aac -b:a 128k
+generate_tone "$INPUT_DIR/sine.ogg"  -c:a libvorbis -b:a 128k
+generate_tone "$INPUT_DIR/sine.opus" -c:a libopus -b:a 128k
+generate_tone "$INPUT_DIR/sine.flac" -c:a flac
+
+echo "Running audio_convert tests"
+for input_file in "$INPUT_DIR"/*; do
+    base_name="$(basename "$input_file")"
+    stem="${base_name%.*}"
+    output_file="$OUTPUT_DIR/${stem}.mp3"
+
+    echo "  converting $base_name"
+    "$AUDIO_CONVERT_BIN" "$input_file" "$output_file"
+
+    codec_name="$(ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 "$output_file")"
+    sample_rate="$(ffprobe -v error -select_streams a:0 -show_entries stream=sample_rate -of csv=p=0 "$output_file")"
+    channels="$(ffprobe -v error -select_streams a:0 -show_entries stream=channels -of csv=p=0 "$output_file")"
+
+    if [ "$codec_name" != "mp3" ]; then
+        echo "Unexpected codec for $output_file: $codec_name"
+        exit 1
+    fi
+
+    if [ "$sample_rate" != "48000" ]; then
+        echo "Unexpected sample rate for $output_file: $sample_rate"
+        exit 1
+    fi
+
+    if [ "$channels" != "2" ]; then
+        echo "Unexpected channel count for $output_file: $channels"
+        exit 1
+    fi
+done
+
+echo "All audio_convert tests passed."
+echo "Inputs : $INPUT_DIR"
+echo "Outputs: $OUTPUT_DIR"
