@@ -15,6 +15,7 @@ mkdir -p $ARCHIVE_DIR
 mkdir -p $DEST_DIR
 mkdir -p $OUTPUT_DIR
 rm -rf $WORKSPACE
+rm -rf "$DEST_DIR/ffmpeg"
 mkdir -p $WORKSPACE
 DOCKER=${DOCKER:-podman}
 
@@ -44,8 +45,10 @@ DEMO_BUILD_DIR=$ROOT/build/example-linux-$ARCH
 echo "Building examples with CMake..."
 cmake -S $ROOT/example -B $DEMO_BUILD_DIR -DFFMPEG_ROOT=$DEST_DIR/ffmpeg -DCMAKE_BUILD_TYPE=Release
 cmake --build $DEMO_BUILD_DIR --parallel
+echo "ffmpeg_example shared library built at: $DEMO_BUILD_DIR/bin/libffmpeg_example.so"
 echo "audio_convert demo built at: $DEMO_BUILD_DIR/bin/audio_convert"
 echo "video_convert demo built at: $DEMO_BUILD_DIR/bin/video_convert"
+echo "media_info demo built at: $DEMO_BUILD_DIR/bin/media_info"
 
 if [ "$(id -u)" -eq 0 ]; then
     SUDO=""

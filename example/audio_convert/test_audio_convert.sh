@@ -28,6 +28,27 @@ if ! command -v ffprobe >/dev/null 2>&1; then
     exit 1
 fi
 
+ENCODERS_OUTPUT="$(ffmpeg -hide_banner -encoders 2>/dev/null || true)"
+
+encoder_available() {
+    local encoder_name=$1
+
+    grep -Eq "[[:space:]]${encoder_name}([[:space:]]|$)" <<<"$ENCODERS_OUTPUT"
+}
+
+select_encoder() {
+    local encoder_name
+
+    for encoder_name in "$@"; do
+        if encoder_available "$encoder_name"; then
+            echo "$encoder_name"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
 mkdir -p "$INPUT_DIR" "$OUTPUT_DIR"
 
 generate_tone() {
@@ -43,11 +64,23 @@ generate_tone() {
 
 echo "Generating sine-wave test inputs under $INPUT_DIR"
 generate_tone "$INPUT_DIR/sine.wav"  -c:a pcm_s16le
-generate_tone "$INPUT_DIR/sine.mp3"  -c:a libmp3lame -b:a 128k
+
+MP3_ENCODER="$(select_encoder libmp3lame)"
+generate_tone "$INPUT_DIR/sine.mp3"  -c:a "$MP3_ENCODER" -b:a 128k
 generate_tone "$INPUT_DIR/sine.aac"  -c:a aac -b:a 128k
-generate_tone "$INPUT_DIR/sine.ogg"  -c:a libvorbis -b:a 128k
-generate_tone "$INPUT_DIR/sine.opus" -c:a libopus -b:a 128k
 generate_tone "$INPUT_DIR/sine.flac" -c:a flac
+
+if OGG_ENCODER="$(select_encoder libvorbis vorbis)"; then
+    generate_tone "$INPUT_DIR/sine.ogg" -c:a "$OGG_ENCODER" -b:a 128k
+else
+    echo "Skipping OGG input generation: no Vorbis encoder in system ffmpeg"
+fi
+
+if OPUS_ENCODER="$(select_encoder libopus opus)"; then
+    generate_tone "$INPUT_DIR/sine.opus" -c:a "$OPUS_ENCODER" -b:a 128k
+else
+    echo "Skipping Opus input generation: no Opus encoder in system ffmpeg"
+fi
 
 echo "Running audio_convert tests"
 for input_file in "$INPUT_DIR"/*; do

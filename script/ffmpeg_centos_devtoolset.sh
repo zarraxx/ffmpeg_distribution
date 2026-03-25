@@ -17,6 +17,7 @@ export PATH=/opt/x-tools/utils/bin:$PATH
 # x264/x265 enable -ffast-math by default, which pulls in glibc __*_finite
 # symbols and makes the static SDK fragile when used on the host toolchain.
 export X264_CMAKE_EXTRA='--extra-cflags=-fno-fast-math -fno-finite-math-only -fno-unsafe-math-optimizations'
+export FFMPEG_CONFIG_EXTRA=""
 
 
 export BUILD_DIR=/workspace/build
@@ -38,6 +39,9 @@ build_x264
 
 if [ "$(uname -m)" = "aarch64" ]; then
   export X265_CMAKE_EXTRA="-DENABLE_ASSEMBLY=OFF -DCC_HAS_FAST_MATH=FALSE"
+  # FFmpeg's aarch64 NEON/asm objects can still fail to link into our host-side
+  # shared example library even with --enable-pic, so disable asm here.
+  export FFMPEG_CONFIG_EXTRA="--disable-asm --disable-neon"
 else
   export X265_CMAKE_EXTRA="-DCC_HAS_FAST_MATH=FALSE"
 fi

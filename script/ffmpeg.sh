@@ -198,6 +198,7 @@ build_ffmpeg(){
 
  ./configure \
     --prefix=$DEST_DIR \
+    --enable-pic \
     --pkg-config-flags="--static" \
     --extra-cflags="-I$DEST_DIR/include" \
     --extra-ldflags="-L$DEST_DIR/lib -L$DEST_DIR/lib64" \
@@ -284,7 +285,8 @@ build_ffmpeg(){
     --enable-decoder=libdav1d \
     \
     --enable-bsf=aac_adtstoasc \
-    --enable-bsf=hevc_mp4toannexb
+    --enable-bsf=hevc_mp4toannexb \
+    ${FFMPEG_CONFIG_EXTRA}
 
 
     make -j$(get_cpu_count)

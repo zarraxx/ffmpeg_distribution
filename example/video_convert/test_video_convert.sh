@@ -28,31 +28,84 @@ if ! command -v ffprobe >/dev/null 2>&1; then
     exit 1
 fi
 
+ENCODERS_OUTPUT="$(ffmpeg -hide_banner -encoders 2>/dev/null || true)"
+
 find_font_file() {
     local candidate
+    local windows_root
+
+    if command -v fc-match >/dev/null 2>&1; then
+        candidate="$(fc-match -f '%{file}\n' "DejaVu Sans" 2>/dev/null | head -n 1 || true)"
+        if [ -n "$candidate" ] && [ -f "$candidate" ]; then
+            echo "$candidate"
+            return 0
+        fi
+
+        candidate="$(fc-match -f '%{file}\n' "Arial" 2>/dev/null | head -n 1 || true)"
+        if [ -n "$candidate" ] && [ -f "$candidate" ]; then
+            echo "$candidate"
+            return 0
+        fi
+    fi
 
     for candidate in \
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf" \
         "/usr/share/fonts/dejavu/DejaVuSans.ttf" \
-        "/usr/share/fonts/TTF/DejaVuSans.ttf"; do
+        "/usr/share/fonts/TTF/DejaVuSans.ttf" \
+        "/System/Library/Fonts/Supplemental/Arial Unicode.ttf" \
+        "/System/Library/Fonts/Supplemental/Arial.ttf" \
+        "/Library/Fonts/Arial.ttf" \
+        "/System/Library/Fonts/Supplemental/Tahoma.ttf" \
+        "/c/Windows/Fonts/arial.ttf" \
+        "/c/Windows/Fonts/ARIAL.TTF" \
+        "/c/Windows/Fonts/segoeui.ttf" \
+        "/c/Windows/Fonts/tahoma.ttf" \
+        "/c/windows/Fonts/arial.ttf" \
+        "/c/windows/Fonts/segoeui.ttf" \
+        "/c/windows/Fonts/tahoma.ttf" \
+        "/mnt/c/Windows/Fonts/arial.ttf" \
+        "/mnt/c/Windows/Fonts/segoeui.ttf" \
+        "/mnt/c/Windows/Fonts/tahoma.ttf"; do
         if [ -f "$candidate" ]; then
             echo "$candidate"
             return 0
         fi
     done
 
+    if [ -n "${WINDIR:-}" ] && command -v cygpath >/dev/null 2>&1; then
+        windows_root="$(cygpath -u "$WINDIR" 2>/dev/null || true)"
+        for candidate in \
+            "$windows_root/Fonts/arial.ttf" \
+            "$windows_root/Fonts/ARIAL.TTF" \
+            "$windows_root/Fonts/segoeui.ttf" \
+            "$windows_root/Fonts/tahoma.ttf"; do
+            if [ -f "$candidate" ]; then
+                echo "$candidate"
+                return 0
+            fi
+        done
+    fi
+
     return 1
 }
 
-require_encoder() {
+encoder_available() {
     local encoder_name=$1
-    local encoders_output
 
-    encoders_output="$(ffmpeg -hide_banner -encoders 2>/dev/null || true)"
-    if ! grep -Eq "[[:space:]]${encoder_name}([[:space:]]|$)" <<<"$encoders_output"; then
-        echo "Required encoder not found in system ffmpeg: ${encoder_name}"
-        exit 1
-    fi
+    grep -Eq "[[:space:]]${encoder_name}([[:space:]]|$)" <<<"$ENCODERS_OUTPUT"
+}
+
+select_encoder() {
+    local encoder_name
+
+    for encoder_name in "$@"; do
+        if encoder_available "$encoder_name"; then
+            echo "$encoder_name"
+            return 0
+        fi
+    done
+
+    return 1
 }
 
 generate_video() {
@@ -75,10 +128,6 @@ generate_video() {
 
 mkdir -p "$INPUT_DIR" "$OUTPUT_DIR"
 
-require_encoder "libx264"
-require_encoder "libx265"
-require_encoder "libaom-av1"
-
 FONT_FILE="$(find_font_file || true)"
 if [ -z "$FONT_FILE" ]; then
     echo "No suitable font file found for drawtext"
@@ -86,18 +135,55 @@ if [ -z "$FONT_FILE" ]; then
 fi
 
 echo "Generating video test inputs under $INPUT_DIR"
-generate_video "$INPUT_DIR/blank_x264_avi.avi" \
-    "$FONT_FILE" \
-    -c:v libx264 -preset medium -crf 23 \
-    -c:a mp3 -b:a 128k
-generate_video "$INPUT_DIR/blank_x265_mp4.mp4" \
-    "$FONT_FILE" \
-    -c:v libx265 -preset medium -crf 28 -tag:v hvc1 \
-    -c:a aac -b:a 128k
-generate_video "$INPUT_DIR/blank_av1_mkv.mkv" \
-    "$FONT_FILE" \
-    -c:v libaom-av1 -crf 34 -b:v 0 -cpu-used 8 -row-mt 1 \
-    -c:a libopus -b:a 128k
+INPUT_COUNT=0
+
+if X264_ENCODER="$(select_encoder libx264)"; then
+    generate_video "$INPUT_DIR/blank_x264_avi.avi" \
+        "$FONT_FILE" \
+        -c:v "$X264_ENCODER" -preset medium -crf 23 \
+        -c:a mp3 -b:a 128k
+    INPUT_COUNT=$((INPUT_COUNT + 1))
+else
+    echo "Skipping AVI+x264 input generation: no x264 encoder in system ffmpeg"
+fi
+
+if X265_ENCODER="$(select_encoder libx265)"; then
+    generate_video "$INPUT_DIR/blank_x265_mp4.mp4" \
+        "$FONT_FILE" \
+        -c:v "$X265_ENCODER" -preset medium -crf 28 -tag:v hvc1 \
+        -c:a aac -b:a 128k
+    INPUT_COUNT=$((INPUT_COUNT + 1))
+else
+    echo "Skipping MP4+x265 input generation: no x265 encoder in system ffmpeg"
+fi
+
+if AV1_ENCODER="$(select_encoder libaom-av1 librav1e libsvtav1)"; then
+    if [ "$AV1_ENCODER" = "libaom-av1" ]; then
+        AV1_VIDEO_ARGS="-c:v $AV1_ENCODER -crf 34 -b:v 0 -cpu-used 8 -row-mt 1"
+    elif [ "$AV1_ENCODER" = "librav1e" ]; then
+        AV1_VIDEO_ARGS="-c:v $AV1_ENCODER -qp 90 -speed 10"
+    else
+        AV1_VIDEO_ARGS="-c:v $AV1_ENCODER -crf 40 -preset 12"
+    fi
+
+    if OPUS_ENCODER="$(select_encoder libopus opus)"; then
+        # shellcheck disable=SC2086
+        generate_video "$INPUT_DIR/blank_av1_mkv.mkv" \
+            "$FONT_FILE" \
+            $AV1_VIDEO_ARGS \
+            -c:a "$OPUS_ENCODER" -b:a 128k
+        INPUT_COUNT=$((INPUT_COUNT + 1))
+    else
+        echo "Skipping MKV+AV1 input generation: no Opus encoder in system ffmpeg"
+    fi
+else
+    echo "Skipping MKV+AV1 input generation: no AV1 encoder in system ffmpeg"
+fi
+
+if [ "$INPUT_COUNT" -eq 0 ]; then
+    echo "No video inputs were generated. System ffmpeg lacks the required encoders."
+    exit 1
+fi
 
 echo "Running video_convert tests"
 for input_file in "$INPUT_DIR"/*; do

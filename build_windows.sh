@@ -11,6 +11,7 @@ OUTPUT_DIR=$ROOT/out
 mkdir -p $DEST_DIR
 mkdir -p $OUTPUT_DIR
 rm -rf $WORKSPACE
+rm -rf "$DEST_DIR/ffmpeg"
 mkdir -p $WORKSPACE
 mkdir -p $ARCHIVE_DIR
 
@@ -43,8 +44,10 @@ cmake -S $ROOT/example -B $DEMO_BUILD_DIR \
     -DCMAKE_C_COMPILER=$CC \
     -DFFMPEG_ROOT=$DEST_DIR/ffmpeg
 cmake --build $DEMO_BUILD_DIR --parallel
+echo "ffmpeg_example shared library built at: $DEMO_BUILD_DIR/bin/ffmpeg_example.dll"
 echo "audio_convert demo built at: $DEMO_BUILD_DIR/bin/audio_convert.exe"
 echo "video_convert demo built at: $DEMO_BUILD_DIR/bin/video_convert.exe"
+echo "media_info demo built at: $DEMO_BUILD_DIR/bin/media_info.exe"
 
 echo "Installing system ffmpeg for example tests..."
 pacman -S --needed --noconfirm mingw-w64-ucrt-x86_64-ffmpeg

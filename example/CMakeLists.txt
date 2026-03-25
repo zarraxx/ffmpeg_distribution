@@ -6,6 +6,8 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
 get_filename_component(REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/.." ABSOLUTE)
 
@@ -67,18 +69,46 @@ pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET
 )
 
 add_library(ffmpeg_example_common INTERFACE)
-target_include_directories(ffmpeg_example_common INTERFACE "${FFMPEG_ROOT}/include")
-target_link_libraries(ffmpeg_example_common INTERFACE PkgConfig::FFMPEG)
-
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_link_options(ffmpeg_example_common INTERFACE -no-pie)
-endif()
-
 if(MSVC)
     target_compile_options(ffmpeg_example_common INTERFACE /W4)
 else()
     target_compile_options(ffmpeg_example_common INTERFACE -Wall -Wextra -Wpedantic)
 endif()
 
+add_library(ffmpeg_example SHARED
+    media_sdk/audio_normalize.c
+    media_sdk/common.c
+    media_sdk/media_info.c
+    media_sdk/video_normalize.c
+)
+target_compile_definitions(ffmpeg_example PRIVATE FFMPEG_EXAMPLE_BUILD_SHARED)
+target_include_directories(ffmpeg_example
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/media_sdk"
+    PRIVATE
+        "${FFMPEG_ROOT}/include"
+)
+target_link_libraries(ffmpeg_example
+    PRIVATE
+        PkgConfig::FFMPEG
+        ffmpeg_example_common
+)
+
+if(WIN32)
+    set_target_properties(ffmpeg_example PROPERTIES PREFIX "")
+endif()
+
+if(APPLE)
+    set(_example_loader_path "@loader_path")
+else()
+    set(_example_loader_path "$ORIGIN")
+endif()
+
+set_target_properties(ffmpeg_example PROPERTIES
+    BUILD_RPATH "${_example_loader_path}"
+    INSTALL_RPATH "${_example_loader_path}"
+)
+
 add_subdirectory(audio_convert)
+add_subdirectory(media_info)
 add_subdirectory(video_convert)
