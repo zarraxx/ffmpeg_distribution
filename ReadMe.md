@@ -1,5 +1,7 @@
 # FFmpeg SDK
 
+[![night-build](https://github.com/zarraxx/ffmpeg_distribution/actions/workflows/night-build.yml/badge.svg?branch=main)](https://github.com/zarraxx/ffmpeg_distribution/actions/workflows/night-build.yml)
+
 一个用于构建精简版、静态链接 FFmpeg SDK 的脚本仓库，面向 Linux、macOS 和 Windows 三类目标平台。
 
 项目的目标不是产出 `ffmpeg`/`ffprobe` 命令行工具，而是产出可集成到业务程序中的头文件和静态库，并且默认关闭了网络、文档、自动探测等能力，尽量缩小体积和依赖面。
