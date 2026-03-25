@@ -11,7 +11,6 @@ OUTPUT_DIR=$ROOT/out
 mkdir -p $DEST_DIR
 mkdir -p $OUTPUT_DIR
 rm -rf $WORKSPACE
-rm -rf $ARCHIVE_DIR
 mkdir -p $WORKSPACE
 mkdir -p $ARCHIVE_DIR
 
