@@ -2,7 +2,7 @@
 set -e
 ROOT="$(cd $(dirname "$(realpath "$0")");pwd)"
 
-export ARCHIVE_DIR=$ROOT/archive
+export ARCHIVE_DIR=~/archive
 mkdir -p $ARCHIVE_DIR
 
 source $ROOT/script/ffmpeg.sh
