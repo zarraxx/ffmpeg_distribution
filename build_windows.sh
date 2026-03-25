@@ -19,6 +19,8 @@ export BUILD_DIR=$WORKSPACE
 export DEST_DIR=$DEST_DIR
 export ARCHIVE_DIR=$ARCHIVE_DIR
 
+ls -la $ARCHIVE_DIR
+
 export PATH="/opt/cmake/cmake-3.27.9-windows-x86_64/bin:$PATH"
 cmake --version
 
