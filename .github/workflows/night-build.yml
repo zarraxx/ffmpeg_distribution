@@ -33,7 +33,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: ffmpeg-source-${{ steps.get_version.outputs.ffmpeg_version }}
-          path: archive/*.tar.*
+          path: ~/archive/*.tar.*
           if-no-files-found: error
           retention-days: 2
 
