@@ -164,7 +164,11 @@ build_dav1d(){
         -Ddefault_library=static \
         -Db_pie=false \
         -Db_staticpic=true
-    ninja -j$(get_cpu_count)
+    ninja -v -j$(get_cpu_count) || {
+        echo "===== meson-log.txt ====="
+        cat meson-logs/meson-log.txt || true
+        exit 1
+    }
     ninja install
 }
 
