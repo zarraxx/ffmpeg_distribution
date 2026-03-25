@@ -227,6 +227,16 @@ jobs:
        with:
          name: ffmpeg-windows-x86_64
          path: dist
+     - name: Download macOS x64 artifact
+       uses: actions/download-artifact@v8
+       with:
+         name: ffmpeg-darwin-x86_64
+         path: dist
+     - name: Download macOS aarch64 artifact
+       uses: actions/download-artifact@v8
+       with:
+         name: ffmpeg-darwin-aarch64
+         path: dist
      - name: Show downloaded files
        run: ls -lah dist
      - name: Publish Nightly Release
