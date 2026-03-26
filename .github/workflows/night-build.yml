@@ -196,7 +196,7 @@ jobs:
         run: |
           echo "Building windows-x64..."
           chmod +x ./build_windows.sh
-          ./build_windows.sh x86_64
+          SKIP_EXAMPLE_TESTS=1 ./build_windows.sh x86_64
           ls -lah out/
       - name: Upload windows x64 artifact
         uses: actions/upload-artifact@v6

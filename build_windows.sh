@@ -126,6 +126,8 @@ for runtime_dir in "$SDK_BIN_DIR" "$SDK_LIB_DIR" "$SDK_LIB64_DIR"; do
     fi
 done
 
+cp $SDK_BIN_DIR/libogg.dll $SDK_BIN_DIR/ogg.dll
+
 mkdir -p "$SDK_BIN_DIR"
 copy_windows_runtime_dlls "$SDK_BIN_DIR"
 copy_windows_runtime_dlls "$DEMO_BUILD_DIR/bin"
