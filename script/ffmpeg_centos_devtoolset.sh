@@ -18,16 +18,18 @@ export PATH=/opt/x-tools/utils/bin:$PATH
 # symbols and makes the static SDK fragile when used on the host toolchain.
 # We also link these static FFmpeg libs into our own shared test library, so
 # FFmpeg's asm objects need to be disabled for a consistently PIC-safe SDK.
-export X264_CMAKE_EXTRA='--extra-cflags=-fno-fast-math -fno-finite-math-only -fno-unsafe-math-optimizations'
+export X264_CONF_EXTRA='--extra-cflags=-fno-fast-math -fno-finite-math-only -fno-unsafe-math-optimizations'
 export FFMPEG_CONFIG_EXTRA="--disable-asm"
 
 
 export BUILD_DIR=/workspace/build
-export DEST_DIR=/opt/x-tools/dist/ffmpeg
+export DEST_DYNAMIC_DIR=/opt/x-tools/dist/ffmpeg-dynamic
+export DEST_STATIC_DIR=/opt/x-tools/dist/ffmpeg-static
 export ARCHIVE_DIR=/workspace/archive
 
 mkdir -p ${BUILD_DIR}
-mkdir -p ${DEST_DIR}
+mkdir -p ${DEST_DYNAMIC_DIR}
+mkdir -p ${DEST_STATIC_DIR}
 mkdir -p ${ARCHIVE_DIR}
 
 source $ROOT/ffmpeg.sh

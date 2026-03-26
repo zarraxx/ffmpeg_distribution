@@ -7,7 +7,28 @@ export x265_VERSION=4.1
 export AV1_VERSION=1.5.3
 export OPUS_VERSION=1.6.1
 
-export PKG_CONFIG_PATH="$DEST_DIR/lib/pkgconfig:$DEST_DIR/lib64/pkgconfig:$PKG_CONFIG_PATH"
+export PKG_CONFIG_PATH="$DEST_STATIC_DIR/lib/pkgconfig:$DEST_STATIC_DIR/lib64/pkgconfig"
+
+init_shared_runtime_flags() {
+    SDK_RUNTIME_RPATH=""
+    SDK_SHARED_LINK_FLAGS=""
+    SDK_CMAKE_SHARED_ARGS=""
+
+    case "$(uname -s)" in
+        Linux)
+            SDK_RUNTIME_RPATH='$ORIGIN'
+            SDK_SHARED_LINK_FLAGS="-Wl,-rpath,$SDK_RUNTIME_RPATH -Wl,-rpath-link,$DEST_DYNAMIC_DIR/lib -Wl,-rpath-link,$DEST_DYNAMIC_DIR/lib64"
+            SDK_CMAKE_SHARED_ARGS="-DCMAKE_BUILD_RPATH=$SDK_RUNTIME_RPATH -DCMAKE_INSTALL_RPATH=$SDK_RUNTIME_RPATH"
+            ;;
+        Darwin)
+            SDK_RUNTIME_RPATH='@loader_path'
+            SDK_SHARED_LINK_FLAGS="-Wl,-rpath,$SDK_RUNTIME_RPATH"
+            SDK_CMAKE_SHARED_ARGS="-DCMAKE_BUILD_RPATH=$SDK_RUNTIME_RPATH -DCMAKE_INSTALL_RPATH=$SDK_RUNTIME_RPATH"
+            ;;
+    esac
+}
+
+init_shared_runtime_flags
 
 download_file() {
     local filename=$1
@@ -49,6 +70,7 @@ normalize_pkgconfig_metadata() {
     local win_dest_dir
     local candidate
     local -a prefix_candidates
+    local DEST_DIR="${1:-$DEST_STATIC_DIR}"
 
     prefix_candidates=("$DEST_DIR")
     if command -v cygpath >/dev/null 2>&1; then
@@ -79,7 +101,20 @@ build_lame(){
     tar xvf $ARCHIVE_DIR/lame-$LAME_VERSION.tar.gz
     cd lame-$LAME_VERSION
 
-    CFLAGS="${CFLAGS:+$CFLAGS }-fPIC" ./configure --prefix=$DEST_DIR  --disable-shared --enable-static --disable-frontend
+    CFLAGS="${CFLAGS:+$CFLAGS }-fPIC" ./configure --prefix=$DEST_STATIC_DIR  --disable-shared --enable-static --disable-frontend
+
+    make -j$(get_cpu_count)
+    make install
+
+    export PKG_CONFIG_PATH="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
+    cd $BUILD_DIR
+    rm -rf lame*
+    tar xvf $ARCHIVE_DIR/lame-$LAME_VERSION.tar.gz
+    cd lame-$LAME_VERSION
+
+    LDFLAGS="${LDFLAGS:+$LDFLAGS }${SDK_SHARED_LINK_FLAGS}" \
+    CFLAGS="${CFLAGS:+$CFLAGS }-fPIC" \
+    ./configure --prefix=$DEST_DYNAMIC_DIR  --disable-static --enable-shared --disable-frontend
 
     make -j$(get_cpu_count)
     make install
@@ -87,6 +122,8 @@ build_lame(){
 
 build_ogg(){
     download_file "libogg-$OGG_VERSION.tar.xz"
+
+    export PKG_CONFIG_PATH="$DEST_STATIC_DIR/lib/pkgconfig:$DEST_STATIC_DIR/lib64/pkgconfig"
     cd $BUILD_DIR
     rm -rf libogg*
     tar xvf $ARCHIVE_DIR/libogg-$OGG_VERSION.tar.xz
@@ -94,17 +131,35 @@ build_ogg(){
 
     rm -rf _build && mkdir -p _build && cd _build
 
+
     cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release  \
     -DBUILD_SHARED_LIBS=OFF \
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
     -DCMAKE_INSTALL_LIBDIR=lib  \
-    -DCMAKE_INSTALL_PREFIX=$DEST_DIR ..
+    -DCMAKE_INSTALL_PREFIX=$DEST_STATIC_DIR ..
+    make -j$(get_cpu_count)
+    make install
+
+    export PKG_CONFIG_PATH="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
+    cd $BUILD_DIR
+    rm -rf libogg*
+    tar xvf $ARCHIVE_DIR/libogg-$OGG_VERSION.tar.xz
+    cd libogg-$OGG_VERSION
+    rm -rf _build && mkdir -p _build && cd _build
+    cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release  \
+    -DBUILD_SHARED_LIBS=ON \
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+    -DCMAKE_INSTALL_LIBDIR=lib  \
+    -DCMAKE_INSTALL_PREFIX=$DEST_DYNAMIC_DIR \
+    ${SDK_CMAKE_SHARED_ARGS} ..
     make -j$(get_cpu_count)
     make install
 }
 
 build_vorbis(){
     download_file "libvorbis-$VORBIS_VERSION.tar.xz"
+
+    export PKG_CONFIG_PATH="$DEST_STATIC_DIR/lib/pkgconfig:$DEST_STATIC_DIR/lib64/pkgconfig"
     cd $BUILD_DIR
     rm -rf libvorbis*
     tar xvf $ARCHIVE_DIR/libvorbis-$VORBIS_VERSION.tar.xz
@@ -115,27 +170,33 @@ build_vorbis(){
     -DBUILD_SHARED_LIBS=OFF \
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
     -DCMAKE_INSTALL_LIBDIR=lib  \
-    -DCMAKE_INSTALL_PREFIX=$DEST_DIR \
+    -DCMAKE_INSTALL_PREFIX=$DEST_STATIC_DIR \
+    ${VORBIS_CMAKE_EXTRA} ..
+    make -j$(get_cpu_count)
+    make install
+
+    export PKG_CONFIG_PATH="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
+    cd $BUILD_DIR
+    rm -rf libvorbis*
+    tar xvf $ARCHIVE_DIR/libvorbis-$VORBIS_VERSION.tar.xz
+    cd libvorbis-$VORBIS_VERSION
+    rm -rf _build && mkdir -p _build && cd _build
+    cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_SHARED_LIBS=ON \
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+    -DCMAKE_INSTALL_LIBDIR=lib  \
+    -DCMAKE_INSTALL_PREFIX=$DEST_DYNAMIC_DIR \
+    ${SDK_CMAKE_SHARED_ARGS} \
     ${VORBIS_CMAKE_EXTRA} ..
     make -j$(get_cpu_count)
     make install
 }
 
-build_vorbis_autotolls(){
-    download_file "libvorbis-$VORBIS_VERSION.tar.xz"
-    cd $BUILD_DIR
-    rm -rf libvorbis*
-    tar xvf $ARCHIVE_DIR/libvorbis-$VORBIS_VERSION.tar.xz
-    cd libvorbis-$VORBIS_VERSION
-
-    ./autogen.sh
-    ./configure --prefix=$DEST_DIR  --disable-shared --enable-static --disable-frontend
-    make -j$(get_cpu_count)
-    make install
-}
 
 build_opus(){
     download_file "opus-$OPUS_VERSION.tar.gz"
+
+    export PKG_CONFIG_PATH="$DEST_STATIC_DIR/lib/pkgconfig:$DEST_STATIC_DIR/lib64/pkgconfig"
     cd $BUILD_DIR
     rm -rf opus*
     tar xvf $ARCHIVE_DIR/opus-$OPUS_VERSION.tar.gz
@@ -147,25 +208,55 @@ build_opus(){
     -DBUILD_SHARED_LIBS=OFF \
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
     -DCMAKE_INSTALL_LIBDIR=lib  \
-    -DCMAKE_INSTALL_PREFIX=$DEST_DIR ..
+    -DCMAKE_INSTALL_PREFIX=$DEST_STATIC_DIR ..
+    make -j$(get_cpu_count)
+    make install
+
+    export PKG_CONFIG_PATH="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
+    cd $BUILD_DIR
+    rm -rf opus*
+    tar xvf $ARCHIVE_DIR/opus-$OPUS_VERSION.tar.gz
+    cd opus-$OPUS_VERSION
+    rm -rf _build && mkdir -p _build && cd _build
+    cmake -G "Unix Makefiles" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_SHARED_LIBS=ON \
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+    -DCMAKE_INSTALL_LIBDIR=lib  \
+    -DCMAKE_INSTALL_PREFIX=$DEST_DYNAMIC_DIR \
+    ${SDK_CMAKE_SHARED_ARGS} ..
     make -j$(get_cpu_count)
     make install
 }
 
 build_x264(){
     download_file "x264-$X264_VERSION.tar.bz2"
+
+    export PKG_CONFIG_PATH="$DEST_STATIC_DIR/lib/pkgconfig:$DEST_STATIC_DIR/lib64/pkgconfig"
     cd $BUILD_DIR
     rm -rf x264*
     tar xvf $ARCHIVE_DIR/x264-$X264_VERSION.tar.bz2
     cd x264-stable
 
-    ./configure --prefix=$DEST_DIR --enable-pic --enable-static --disable-shared --disable-cli ${X264_CMAKE_EXTRA}
+    ./configure --prefix=$DEST_STATIC_DIR --enable-pic --enable-static --disable-shared --disable-cli ${X264_CONF_EXTRA}
+    make -j$(get_cpu_count)
+    make install
+
+    export PKG_CONFIG_PATH="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
+    cd $BUILD_DIR
+    rm -rf x264*
+    tar xvf $ARCHIVE_DIR/x264-$X264_VERSION.tar.bz2
+    cd x264-stable
+    ./configure --prefix=$DEST_DYNAMIC_DIR --enable-pic --disable-static --enable-shared --disable-cli \
+    --extra-ldflags="$SDK_SHARED_LINK_FLAGS" ${X264_CONF_EXTRA}
     make -j$(get_cpu_count)
     make install
 }
 
 build_x265(){
     download_file "x265_$x265_VERSION.tar.gz"
+
+    export PKG_CONFIG_PATH="$DEST_STATIC_DIR/lib/pkgconfig:$DEST_STATIC_DIR/lib64/pkgconfig"
     cd $BUILD_DIR
     rm -rf x265*
     tar xvf $ARCHIVE_DIR/x265_$x265_VERSION.tar.gz
@@ -173,13 +264,26 @@ build_x265(){
 
     rm -rf _build && mkdir -p _build && cd _build
     cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release  -DCMAKE_INSTALL_LIBDIR=lib \
-    -DCMAKE_INSTALL_PREFIX=$DEST_DIR -DENABLE_SHARED=0 -DENABLE_CLI=0 -DENABLE_PIC=1 ${X265_CMAKE_EXTRA} ../source
+    -DCMAKE_INSTALL_PREFIX=$DEST_STATIC_DIR -DENABLE_SHARED=0 -DENABLE_CLI=0 -DENABLE_PIC=1 ${X265_CMAKE_EXTRA} ../source
+    make -j$(get_cpu_count)
+    make install
+
+    export PKG_CONFIG_PATH="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
+    cd $BUILD_DIR
+    rm -rf x265*
+    tar xvf $ARCHIVE_DIR/x265_$x265_VERSION.tar.gz
+    cd x265_$x265_VERSION
+    rm -rf _build && mkdir -p _build && cd _build
+    cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release  -DCMAKE_INSTALL_LIBDIR=lib \
+    -DCMAKE_INSTALL_PREFIX=$DEST_DYNAMIC_DIR -DENABLE_SHARED=1 -DENABLE_CLI=0 -DENABLE_PIC=1 \
+    ${SDK_CMAKE_SHARED_ARGS} ${X265_CMAKE_EXTRA} ../source
     make -j$(get_cpu_count)
     make install
 }
 
 build_dav1d(){
     download_file "dav1d-$AV1_VERSION.tar.xz"
+    export PKG_CONFIG_PATH="$DEST_STATIC_DIR/lib/pkgconfig:$DEST_STATIC_DIR/lib64/pkgconfig"
     cd $BUILD_DIR
     rm -rf dav1d*
     tar xvf $ARCHIVE_DIR/dav1d-$AV1_VERSION.tar.xz
@@ -188,7 +292,7 @@ build_dav1d(){
     rm -rf _build && mkdir -p _build && cd _build
     meson setup .. \
         --buildtype=release \
-        -Dprefix=$DEST_DIR \
+        -Dprefix=$DEST_STATIC_DIR \
         -Dlibdir=lib \
         -Denable_tools=false \
         -Denable_tests=false \
@@ -201,27 +305,42 @@ build_dav1d(){
         exit 1
     }
     ninja install
+
+    export PKG_CONFIG_PATH="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
+    cd $BUILD_DIR
+    rm -rf dav1d*
+    tar xvf $ARCHIVE_DIR/dav1d-$AV1_VERSION.tar.xz
+    cd dav1d-$AV1_VERSION
+    rm -rf _build && mkdir -p _build && cd _build
+    LDFLAGS="${LDFLAGS:+$LDFLAGS }${SDK_SHARED_LINK_FLAGS}" meson setup .. \
+        --buildtype=release \
+        -Dprefix=$DEST_DYNAMIC_DIR \
+        -Dlibdir=lib \
+        -Denable_tools=false \
+        -Denable_tests=false \
+        -Ddefault_library=shared \
+        -Db_pie=false \
+        -Db_staticpic=true
+    ninja -v -j$(get_cpu_count) || {
+        echo "===== meson-log.txt ====="
+        cat meson-logs/meson-log.txt || true
+        exit 1
+    }
+    ninja install
 }
 
 build_ffmpeg(){
     download_file "ffmpeg-$FFMPEG_VERSION.tar.xz"
+
+    export PKG_CONFIG_PATH="$DEST_STATIC_DIR/lib/pkgconfig:$DEST_STATIC_DIR/lib64/pkgconfig"
+
     cd $BUILD_DIR
     rm -rf ffmpeg*
     tar xvf $ARCHIVE_DIR/ffmpeg-$FFMPEG_VERSION.tar.xz
     cd ffmpeg-$FFMPEG_VERSION
 
- ./configure \
-    --prefix=$DEST_DIR \
-    --enable-pic \
-    --pkg-config-flags="--static" \
-    --extra-cflags="-I$DEST_DIR/include" \
-    --extra-ldflags="-L$DEST_DIR/lib -L$DEST_DIR/lib64" \
-    --extra-libs="-lm -lpthread" \
-    --disable-programs \
-    --disable-doc \
+    export FFMPEG_FEATURES=" --disable-doc \
     --disable-debug \
-    --disable-shared \
-    --enable-static \
     --enable-small \
     --disable-everything \
     --disable-network \
@@ -299,11 +418,46 @@ build_ffmpeg(){
     --enable-decoder=libdav1d \
     \
     --enable-bsf=aac_adtstoasc \
-    --enable-bsf=hevc_mp4toannexb \
+    --enable-bsf=hevc_mp4toannexb "
+
+    ./configure \
+    --prefix=$DEST_STATIC_DIR \
+    --enable-pic \
+    --enable-static \
+    --disable-shared \
+    --pkg-config-flags="--static" \
+    --extra-cflags="-I$DEST_STATIC_DIR/include" \
+    --extra-ldflags="-L$DEST_STATIC_DIR/lib -L$DEST_STATIC_DIR/lib64" \
+    --extra-libs="-lm -lpthread" \
+    --disable-programs \
+    ${FFMPEG_FEATURES} \
     ${FFMPEG_CONFIG_EXTRA}
 
 
     make -j$(get_cpu_count)
     make install-libs install-headers
-    normalize_pkgconfig_metadata
+
+
+    export PKG_CONFIG_PATH="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
+    cd $BUILD_DIR
+    rm -rf ffmpeg*
+    tar xvf $ARCHIVE_DIR/ffmpeg-$FFMPEG_VERSION.tar.xz
+    cd ffmpeg-$FFMPEG_VERSION
+
+    ./configure \
+    --prefix=$DEST_DYNAMIC_DIR \
+    --enable-shared \
+    --disable-static \
+    --extra-cflags="-I$DEST_DYNAMIC_DIR/include" \
+    --extra-ldflags="-L$DEST_DYNAMIC_DIR/lib -L$DEST_DYNAMIC_DIR/lib64 ${SDK_SHARED_LINK_FLAGS}" \
+    --extra-libs="-lm -lpthread " \
+    --disable-programs \
+    ${FFMPEG_FEATURES} 
+
+    make -j$(get_cpu_count)
+    make install-libs install-headers
+
+   
+    normalize_pkgconfig_metadata ${DEST_STATIC_DIR}
+    normalize_pkgconfig_metadata ${DEST_DYNAMIC_DIR}
 }

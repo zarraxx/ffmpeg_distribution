@@ -59,7 +59,7 @@ endif()
 
 find_package(PkgConfig REQUIRED)
 set(PKG_CONFIG_USE_CMAKE_PREFIX_PATH ON)
-set(PKG_CONFIG_ARGN --static)
+#set(PKG_CONFIG_ARGN --static)
 pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET
     libavformat
     libavcodec
@@ -81,6 +81,11 @@ add_library(ffmpeg_example SHARED
     media_sdk/media_info.c
     media_sdk/video_normalize.c
 )
+
+
+
+
+
 target_compile_definitions(ffmpeg_example PRIVATE FFMPEG_EXAMPLE_BUILD_SHARED)
 target_include_directories(ffmpeg_example
     PUBLIC
@@ -92,6 +97,11 @@ target_link_libraries(ffmpeg_example
     PRIVATE
         PkgConfig::FFMPEG
         ffmpeg_example_common
+)
+
+target_link_options(ffmpeg_example PRIVATE
+    "-Wl,-rpath-link,${FFMPEG_ROOT}/lib"
+    "-Wl,-rpath-link,${FFMPEG_ROOT}/lib64"
 )
 
 if(WIN32)
@@ -112,3 +122,12 @@ set_target_properties(ffmpeg_example PROPERTIES
 add_subdirectory(audio_convert)
 add_subdirectory(media_info)
 add_subdirectory(video_convert)
+
+set(_ffmpeg_link_dirs "${FFMPEG_ROOT}/lib" "${FFMPEG_ROOT}/lib64")
+
+foreach(_demo_target audio_convert media_info video_convert)
+    target_link_options(${_demo_target} PRIVATE
+        "-Wl,-rpath-link,${FFMPEG_ROOT}/lib"
+        "-Wl,-rpath-link,${FFMPEG_ROOT}/lib64"
+    )
+endforeach()

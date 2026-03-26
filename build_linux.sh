@@ -41,14 +41,21 @@ fi
 
 tar -czvf $OUTPUT_DIR/ffmpeg-linux-${ARCH}${PACKAGE_SUFFIX_PART}.tar.gz -C "$(dirname "$DEST_DIR")" "$(basename "$DEST_DIR")"
 
+SDK_ROOT="$DEST_DIR/ffmpeg-dynamic"
+SDK_LIB_DIR="$SDK_ROOT/lib"
+SDK_LIB64_DIR="$SDK_ROOT/lib64"
+
 DEMO_BUILD_DIR=$ROOT/build/example-linux-$ARCH
 echo "Building examples with CMake..."
-cmake -S $ROOT/example -B $DEMO_BUILD_DIR -DFFMPEG_ROOT=$DEST_DIR/ffmpeg -DCMAKE_BUILD_TYPE=Release
+cmake -S $ROOT/example -B $DEMO_BUILD_DIR -DFFMPEG_ROOT=$SDK_ROOT -DCMAKE_BUILD_TYPE=Release
 cmake --build $DEMO_BUILD_DIR --parallel
 echo "ffmpeg_example shared library built at: $DEMO_BUILD_DIR/bin/libffmpeg_example.so"
 echo "audio_convert demo built at: $DEMO_BUILD_DIR/bin/audio_convert"
 echo "video_convert demo built at: $DEMO_BUILD_DIR/bin/video_convert"
 echo "media_info demo built at: $DEMO_BUILD_DIR/bin/media_info"
+
+export LD_LIBRARY_PATH="$SDK_LIB_DIR:$SDK_LIB64_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+echo "Using LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
 
 if [ "$(id -u)" -eq 0 ]; then
     SUDO=""

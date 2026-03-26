@@ -11,7 +11,7 @@ OUTPUT_DIR=$ROOT/out
 mkdir -p $DEST_DIR
 mkdir -p $OUTPUT_DIR
 rm -rf $WORKSPACE
-rm -rf "$DEST_DIR/ffmpeg"
+rm -rf "$DEST_DIR/ffmpeg*"
 mkdir -p $WORKSPACE
 mkdir -p $ARCHIVE_DIR
 
@@ -36,18 +36,26 @@ fi
 
 tar -czvf $OUTPUT_DIR/ffmpeg-windows-x86_64${PACKAGE_SUFFIX_PART}.tar.gz -C "$(dirname "$DEST_DIR")" "$(basename "$DEST_DIR")"
 
+SDK_ROOT="$DEST_DIR/ffmpeg-dynamic"
+SDK_BIN_DIR="$SDK_ROOT/bin"
+SDK_LIB_DIR="$SDK_ROOT/lib"
+SDK_LIB64_DIR="$SDK_ROOT/lib64"
+
 DEMO_BUILD_DIR=$ROOT/build/example-windows-x86_64
 echo "Building examples with CMake..."
 cmake -S $ROOT/example -B $DEMO_BUILD_DIR \
     -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_COMPILER=$CC \
-    -DFFMPEG_ROOT=$DEST_DIR/ffmpeg
+    -DFFMPEG_ROOT=$SDK_ROOT
 cmake --build $DEMO_BUILD_DIR --parallel
 echo "ffmpeg_example shared library built at: $DEMO_BUILD_DIR/bin/ffmpeg_example.dll"
 echo "audio_convert demo built at: $DEMO_BUILD_DIR/bin/audio_convert.exe"
 echo "video_convert demo built at: $DEMO_BUILD_DIR/bin/video_convert.exe"
 echo "media_info demo built at: $DEMO_BUILD_DIR/bin/media_info.exe"
+
+export PATH="$SDK_BIN_DIR:$SDK_LIB_DIR:$SDK_LIB64_DIR:$PATH"
+echo "Using PATH=$PATH"
 
 echo "Installing system ffmpeg for example tests..."
 pacman -S --needed --noconfirm mingw-w64-ucrt-x86_64-ffmpeg

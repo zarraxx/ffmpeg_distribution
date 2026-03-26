@@ -4,11 +4,13 @@ ROOT="$(cd $(dirname "$(realpath "$0")");pwd)"
 
 
 export BUILD_DIR=$BUILD_DIR
-export DEST_DIR=$DEST_DIR/ffmpeg
+export DEST_DYNAMIC_DIR=$DEST_DIR/ffmpeg-dynamic
+export DEST_STATIC_DIR=$DEST_DIR//ffmpeg-static
 export ARCHIVE_DIR=$ARCHIVE_DIR
 
 mkdir -p ${BUILD_DIR}
-mkdir -p ${DEST_DIR}
+mkdir -p ${DEST_DYNAMIC_DIR}
+mkdir -p ${DEST_STATIC_DIR}
 mkdir -p ${ARCHIVE_DIR}
 
 source $ROOT/ffmpeg.sh

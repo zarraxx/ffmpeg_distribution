@@ -16,7 +16,7 @@ OUTPUT_DIR=$ROOT/out
 mkdir -p $DEST_DIR
 mkdir -p $OUTPUT_DIR
 rm -rf $WORKSPACE
-rm -rf "$DEST_DIR/ffmpeg"
+rm -rf "$DEST_DIR/ffmpeg*"
 mkdir -p $WORKSPACE
 mkdir -p $ARCHIVE_DIR
 
@@ -40,14 +40,21 @@ fi
 
 tar -czvf $OUTPUT_DIR/ffmpeg-darwin-${ARCH}${PACKAGE_SUFFIX_PART}.tar.gz -C "$(dirname "$DEST_DIR")" "$(basename "$DEST_DIR")"
 
+SDK_ROOT="$DEST_DIR/ffmpeg-dynamic"
+SDK_LIB_DIR="$SDK_ROOT/lib"
+SDK_LIB64_DIR="$SDK_ROOT/lib64"
+
 DEMO_BUILD_DIR=$ROOT/build/example-darwin-$ARCH
 echo "Building examples with CMake..."
-cmake -S $ROOT/example -B $DEMO_BUILD_DIR -DFFMPEG_ROOT=$DEST_DIR/ffmpeg -DCMAKE_BUILD_TYPE=Release
+cmake -S $ROOT/example -B $DEMO_BUILD_DIR -DFFMPEG_ROOT=$SDK_ROOT -DCMAKE_BUILD_TYPE=Release
 cmake --build $DEMO_BUILD_DIR --parallel
 echo "ffmpeg_example shared library built at: $DEMO_BUILD_DIR/bin/libffmpeg_example.dylib"
 echo "audio_convert demo built at: $DEMO_BUILD_DIR/bin/audio_convert"
 echo "video_convert demo built at: $DEMO_BUILD_DIR/bin/video_convert"
 echo "media_info demo built at: $DEMO_BUILD_DIR/bin/media_info"
+
+export DYLD_LIBRARY_PATH="$SDK_LIB_DIR:$SDK_LIB64_DIR${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
+echo "Using DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH"
 
 echo "Installing system ffmpeg for example tests..."
 brew install ffmpeg
