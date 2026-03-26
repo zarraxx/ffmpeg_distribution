@@ -107,6 +107,22 @@ patch_lame_exports() {
     mv "$tmp_file" "$sym_file"
 }
 
+patch_vorbis_windows_defs() {
+    local def_file
+    local tmp_file
+
+    for def_file in win32/vorbis.def win32/vorbisenc.def win32/vorbisfile.def; do
+        [ -f "$def_file" ] || continue
+
+        tmp_file="${def_file}.tmp"
+        awk '
+            $0 == "LIBRARY" { next }
+            { print }
+        ' "$def_file" > "$tmp_file"
+        mv "$tmp_file" "$def_file"
+    done
+}
+
 build_lame(){
     download_file "lame-$LAME_VERSION.tar.gz"
     cd $BUILD_DIR
@@ -179,6 +195,7 @@ build_vorbis(){
     rm -rf libvorbis*
     tar xvf $ARCHIVE_DIR/libvorbis-$VORBIS_VERSION.tar.xz
     cd libvorbis-$VORBIS_VERSION
+    patch_vorbis_windows_defs
 
     rm -rf _build && mkdir -p _build && cd _build
     cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release \
@@ -195,6 +212,7 @@ build_vorbis(){
     rm -rf libvorbis*
     tar xvf $ARCHIVE_DIR/libvorbis-$VORBIS_VERSION.tar.xz
     cd libvorbis-$VORBIS_VERSION
+    patch_vorbis_windows_defs
     rm -rf _build && mkdir -p _build && cd _build
     cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_SHARED_LIBS=ON \
