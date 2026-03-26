@@ -45,8 +45,8 @@ run_example_binary() {
 
     "$@" || {
         rc=$?
-        echo "$0 failed with exit code $rc"
-        ls -la "$(dirname "$0")"
+        echo "$1 failed with exit code $rc"
+        ls -la "$(dirname "$1")"
         exit $rc
     }
 }
