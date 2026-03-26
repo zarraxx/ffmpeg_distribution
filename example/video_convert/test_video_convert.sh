@@ -28,8 +28,26 @@ if ! command -v ffprobe >/dev/null 2>&1; then
     exit 1
 fi
 
-ENCODERS_OUTPUT="$(ffmpeg -hide_banner -encoders 2>/dev/null || true)"
-FILTERS_OUTPUT="$(ffmpeg -hide_banner -filters 2>/dev/null || true)"
+run_host_tool() {
+    env -u LD_LIBRARY_PATH -u DYLD_LIBRARY_PATH "$@"
+}
+
+run_example_binary() {
+    if [ -n "${FFMPEG_EXAMPLE_LD_LIBRARY_PATH:-}" ]; then
+        LD_LIBRARY_PATH="${FFMPEG_EXAMPLE_LD_LIBRARY_PATH}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" "$@"
+        return
+    fi
+
+    if [ -n "${FFMPEG_EXAMPLE_DYLD_LIBRARY_PATH:-}" ]; then
+        DYLD_LIBRARY_PATH="${FFMPEG_EXAMPLE_DYLD_LIBRARY_PATH}${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}" "$@"
+        return
+    fi
+
+    "$@"
+}
+
+ENCODERS_OUTPUT="$(run_host_tool ffmpeg -hide_banner -encoders 2>/dev/null || true)"
+FILTERS_OUTPUT="$(run_host_tool ffmpeg -hide_banner -filters 2>/dev/null || true)"
 
 find_font_file() {
     local candidate
@@ -134,7 +152,7 @@ generate_video() {
     shift
 
     if [ "${USE_DRAWTEXT:-0}" = "1" ]; then
-        ffmpeg -hide_banner -loglevel error -y \
+        run_host_tool ffmpeg -hide_banner -loglevel error -y \
             -f lavfi -i "color=c=black:s=1280x720:r=30:d=3" \
             -f lavfi -i "sine=frequency=1000:sample_rate=48000:duration=3" \
             -shortest \
@@ -148,7 +166,7 @@ generate_video() {
     fi
 
     if filter_available testsrc2; then
-        ffmpeg -hide_banner -loglevel error -y \
+        run_host_tool ffmpeg -hide_banner -loglevel error -y \
             -f lavfi -i "testsrc2=s=1280x720:r=30:d=3" \
             -f lavfi -i "sine=frequency=1000:sample_rate=48000:duration=3" \
             -shortest \
@@ -161,7 +179,7 @@ generate_video() {
         return 0
     fi
 
-    ffmpeg -hide_banner -loglevel error -y \
+    run_host_tool ffmpeg -hide_banner -loglevel error -y \
         -f lavfi -i "color=c=black:s=1280x720:r=30:d=3" \
         -f lavfi -i "sine=frequency=1000:sample_rate=48000:duration=3" \
         -shortest \
@@ -248,14 +266,14 @@ for input_file in "$INPUT_DIR"/*; do
     output_file="$OUTPUT_DIR/${stem}.mp4"
 
     echo "  converting $base_name"
-    "$VIDEO_CONVERT_BIN" "$input_file" "$output_file"
+    run_example_binary "$VIDEO_CONVERT_BIN" "$input_file" "$output_file"
 
-    video_codec="$(ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of csv=p=0 "$output_file")"
-    width="$(ffprobe -v error -select_streams v:0 -show_entries stream=width -of csv=p=0 "$output_file")"
-    height="$(ffprobe -v error -select_streams v:0 -show_entries stream=height -of csv=p=0 "$output_file")"
-    audio_codec="$(ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 "$output_file")"
-    sample_rate="$(ffprobe -v error -select_streams a:0 -show_entries stream=sample_rate -of csv=p=0 "$output_file")"
-    channels="$(ffprobe -v error -select_streams a:0 -show_entries stream=channels -of csv=p=0 "$output_file")"
+    video_codec="$(run_host_tool ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of csv=p=0 "$output_file")"
+    width="$(run_host_tool ffprobe -v error -select_streams v:0 -show_entries stream=width -of csv=p=0 "$output_file")"
+    height="$(run_host_tool ffprobe -v error -select_streams v:0 -show_entries stream=height -of csv=p=0 "$output_file")"
+    audio_codec="$(run_host_tool ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 "$output_file")"
+    sample_rate="$(run_host_tool ffprobe -v error -select_streams a:0 -show_entries stream=sample_rate -of csv=p=0 "$output_file")"
+    channels="$(run_host_tool ffprobe -v error -select_streams a:0 -show_entries stream=channels -of csv=p=0 "$output_file")"
 
     if [ "$video_codec" != "h264" ]; then
         echo "Unexpected video codec for $output_file: $video_codec"

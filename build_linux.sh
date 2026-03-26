@@ -54,8 +54,8 @@ echo "audio_convert demo built at: $DEMO_BUILD_DIR/bin/audio_convert"
 echo "video_convert demo built at: $DEMO_BUILD_DIR/bin/video_convert"
 echo "media_info demo built at: $DEMO_BUILD_DIR/bin/media_info"
 
-export LD_LIBRARY_PATH="$SDK_LIB_DIR:$SDK_LIB64_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-echo "Using LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+export FFMPEG_EXAMPLE_LD_LIBRARY_PATH="$SDK_LIB_DIR:$SDK_LIB64_DIR"
+echo "Using FFMPEG_EXAMPLE_LD_LIBRARY_PATH=$FFMPEG_EXAMPLE_LD_LIBRARY_PATH"
 
 if [ "$(id -u)" -eq 0 ]; then
     SUDO=""

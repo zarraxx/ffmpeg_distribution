@@ -53,8 +53,8 @@ echo "audio_convert demo built at: $DEMO_BUILD_DIR/bin/audio_convert"
 echo "video_convert demo built at: $DEMO_BUILD_DIR/bin/video_convert"
 echo "media_info demo built at: $DEMO_BUILD_DIR/bin/media_info"
 
-export DYLD_LIBRARY_PATH="$SDK_LIB_DIR:$SDK_LIB64_DIR${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
-echo "Using DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH"
+export FFMPEG_EXAMPLE_DYLD_LIBRARY_PATH="$SDK_LIB_DIR:$SDK_LIB64_DIR"
+echo "Using FFMPEG_EXAMPLE_DYLD_LIBRARY_PATH=$FFMPEG_EXAMPLE_DYLD_LIBRARY_PATH"
 
 echo "Installing system ffmpeg for example tests..."
 brew install ffmpeg

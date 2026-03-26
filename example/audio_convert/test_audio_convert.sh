@@ -28,7 +28,25 @@ if ! command -v ffprobe >/dev/null 2>&1; then
     exit 1
 fi
 
-ENCODERS_OUTPUT="$(ffmpeg -hide_banner -encoders 2>/dev/null || true)"
+run_host_tool() {
+    env -u LD_LIBRARY_PATH -u DYLD_LIBRARY_PATH "$@"
+}
+
+run_example_binary() {
+    if [ -n "${FFMPEG_EXAMPLE_LD_LIBRARY_PATH:-}" ]; then
+        LD_LIBRARY_PATH="${FFMPEG_EXAMPLE_LD_LIBRARY_PATH}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" "$@"
+        return
+    fi
+
+    if [ -n "${FFMPEG_EXAMPLE_DYLD_LIBRARY_PATH:-}" ]; then
+        DYLD_LIBRARY_PATH="${FFMPEG_EXAMPLE_DYLD_LIBRARY_PATH}${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}" "$@"
+        return
+    fi
+
+    "$@"
+}
+
+ENCODERS_OUTPUT="$(run_host_tool ffmpeg -hide_banner -encoders 2>/dev/null || true)"
 
 encoder_available() {
     local encoder_name=$1
@@ -55,7 +73,7 @@ generate_tone() {
     local output_file=$1
     shift
 
-    ffmpeg -hide_banner -loglevel error -y \
+    run_host_tool ffmpeg -hide_banner -loglevel error -y \
         -f lavfi -i "sine=frequency=1000:sample_rate=48000:duration=3" \
         -af "aformat=sample_rates=48000:sample_fmts=s16:channel_layouts=stereo" \
         "$@" \
@@ -105,11 +123,11 @@ for input_file in "$INPUT_DIR"/*; do
     output_file="$OUTPUT_DIR/${stem}.mp3"
 
     echo "  converting $base_name"
-    "$AUDIO_CONVERT_BIN" "$input_file" "$output_file"
+    run_example_binary "$AUDIO_CONVERT_BIN" "$input_file" "$output_file"
 
-    codec_name="$(ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 "$output_file")"
-    sample_rate="$(ffprobe -v error -select_streams a:0 -show_entries stream=sample_rate -of csv=p=0 "$output_file")"
-    channels="$(ffprobe -v error -select_streams a:0 -show_entries stream=channels -of csv=p=0 "$output_file")"
+    codec_name="$(run_host_tool ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 "$output_file")"
+    sample_rate="$(run_host_tool ffprobe -v error -select_streams a:0 -show_entries stream=sample_rate -of csv=p=0 "$output_file")"
+    channels="$(run_host_tool ffprobe -v error -select_streams a:0 -show_entries stream=channels -of csv=p=0 "$output_file")"
 
     if [ "$codec_name" != "mp3" ]; then
         echo "Unexpected codec for $output_file: $codec_name"

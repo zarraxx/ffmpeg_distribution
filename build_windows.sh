@@ -60,7 +60,7 @@ for runtime_dir in "$SDK_BIN_DIR" "$SDK_LIB_DIR" "$SDK_LIB64_DIR"; do
     fi
 done
 
-export PATH="$SDK_BIN_DIR:$SDK_LIB_DIR:$SDK_LIB64_DIR:$PATH"
+#export PATH="$SDK_BIN_DIR:$SDK_LIB_DIR:$SDK_LIB64_DIR:$PATH"
 echo "Using PATH=$PATH"
 
 echo "Installing system ffmpeg for example tests..."
