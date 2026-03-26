@@ -66,13 +66,15 @@ run_windows_test() {
     return "$rc"
 }
 
-copy_windows_runtime_dlls "$SDK_BIN_DIR"
 
 
 SDK_ROOT="$DEST_DIR/ffmpeg-dynamic"
 SDK_BIN_DIR="$SDK_ROOT/bin"
 SDK_LIB_DIR="$SDK_ROOT/lib"
 SDK_LIB64_DIR="$SDK_ROOT/lib64"
+
+copy_windows_runtime_dlls "$SDK_BIN_DIR"
+
 
 DEMO_BUILD_DIR=$ROOT/build/example-windows-x86_64
 rm -rf "$DEMO_BUILD_DIR"
