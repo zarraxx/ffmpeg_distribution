@@ -123,6 +123,23 @@ patch_vorbis_windows_defs() {
     done
 }
 
+patch_ogg_windows_def() {
+    local def_file="win32/ogg.def"
+    local tmp_file
+
+    [ -f "$def_file" ] || return 0
+
+    # libogg's Windows def file hardcodes "ogg" as the DLL name. Under MinGW
+    # the produced file is installed as libogg.dll, so keeping the LIBRARY line
+    # makes dependents import ogg.dll and fail to load at runtime.
+    tmp_file="${def_file}.tmp"
+    awk '
+        $0 == "LIBRARY ogg" { next }
+        { print }
+    ' "$def_file" > "$tmp_file"
+    mv "$tmp_file" "$def_file"
+}
+
 build_lame(){
     download_file "lame-$LAME_VERSION.tar.gz"
     cd $BUILD_DIR
@@ -159,6 +176,7 @@ build_ogg(){
     rm -rf libogg*
     tar xvf $ARCHIVE_DIR/libogg-$OGG_VERSION.tar.xz
     cd libogg-$OGG_VERSION
+    patch_ogg_windows_def
 
     rm -rf _build && mkdir -p _build && cd _build
 
@@ -176,6 +194,7 @@ build_ogg(){
     rm -rf libogg*
     tar xvf $ARCHIVE_DIR/libogg-$OGG_VERSION.tar.xz
     cd libogg-$OGG_VERSION
+    patch_ogg_windows_def
     rm -rf _build && mkdir -p _build && cd _build
     cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release  \
     -DBUILD_SHARED_LIBS=ON \
