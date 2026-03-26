@@ -96,12 +96,15 @@ normalize_pkgconfig_metadata() {
 
 patch_lame_exports() {
     local sym_file="include/libmp3lame.sym"
+    local tmp_file
 
     [ -f "$sym_file" ] || return 0
 
     # LAME 3.100 keeps lame_init_old in the export list even though the
     # symbol is compiled as static when deprecated code is removed.
-    sed -i '/^lame_init_old$/d' "$sym_file"
+    tmp_file="${sym_file}.tmp"
+    grep -vx 'lame_init_old' "$sym_file" > "$tmp_file" || true
+    mv "$tmp_file" "$sym_file"
 }
 
 build_lame(){
