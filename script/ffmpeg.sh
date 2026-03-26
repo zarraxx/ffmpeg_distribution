@@ -46,14 +46,28 @@ normalize_pkgconfig_metadata() {
     local pc_file
     local content
     local reloc_prefix='${pcfiledir}/../..'
+    local win_dest_dir
+    local candidate
+    local -a prefix_candidates
+
+    prefix_candidates=("$DEST_DIR")
+    if command -v cygpath >/dev/null 2>&1; then
+        win_dest_dir="$(cygpath -m "$DEST_DIR" 2>/dev/null || true)"
+        if [ -n "$win_dest_dir" ]; then
+            prefix_candidates+=("$win_dest_dir")
+        fi
+    fi
 
     for pkgconfig_dir in "$DEST_DIR/lib/pkgconfig" "$DEST_DIR/lib64/pkgconfig"; do
         [ -d "$pkgconfig_dir" ] || continue
 
         find "$pkgconfig_dir" -maxdepth 1 -type f -name '*.pc' | while IFS= read -r pc_file; do
             content=$(cat "$pc_file")
-            content=${content//"$DEST_DIR"/$reloc_prefix}
-            printf '%s' "$content" > "$pc_file"
+            for candidate in "${prefix_candidates[@]}"; do
+                [ -n "$candidate" ] || continue
+                content=${content//"$candidate"/$reloc_prefix}
+            done
+            printf '%s\n' "$content" > "$pc_file"
         done
     done
 }
