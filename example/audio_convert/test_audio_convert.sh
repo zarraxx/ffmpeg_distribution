@@ -43,7 +43,12 @@ run_example_binary() {
         return
     fi
 
-    "$@"
+    "$@" || {
+        rc=$?
+        echo "$0 failed with exit code $rc"
+        ls -la "$(dirname "$0")"
+        exit $rc
+    }
 }
 
 ENCODERS_OUTPUT="$(run_host_tool ffmpeg -hide_banner -encoders 2>/dev/null || true)"
