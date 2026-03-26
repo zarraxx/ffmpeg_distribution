@@ -94,12 +94,23 @@ normalize_pkgconfig_metadata() {
     done
 }
 
+patch_lame_exports() {
+    local sym_file="include/libmp3lame.sym"
+
+    [ -f "$sym_file" ] || return 0
+
+    # LAME 3.100 keeps lame_init_old in the export list even though the
+    # symbol is compiled as static when deprecated code is removed.
+    sed -i '/^lame_init_old$/d' "$sym_file"
+}
+
 build_lame(){
     download_file "lame-$LAME_VERSION.tar.gz"
     cd $BUILD_DIR
     rm -rf lame*
     tar xvf $ARCHIVE_DIR/lame-$LAME_VERSION.tar.gz
     cd lame-$LAME_VERSION
+    patch_lame_exports
 
     CFLAGS="${CFLAGS:+$CFLAGS }-fPIC" ./configure --prefix=$DEST_STATIC_DIR  --disable-shared --enable-static --disable-frontend
 
@@ -111,6 +122,7 @@ build_lame(){
     rm -rf lame*
     tar xvf $ARCHIVE_DIR/lame-$LAME_VERSION.tar.gz
     cd lame-$LAME_VERSION
+    patch_lame_exports
 
     LDFLAGS="${LDFLAGS:+$LDFLAGS }${SDK_SHARED_LINK_FLAGS}" \
     CFLAGS="${CFLAGS:+$CFLAGS }-fPIC" \
