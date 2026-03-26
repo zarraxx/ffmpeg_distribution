@@ -54,6 +54,12 @@ echo "audio_convert demo built at: $DEMO_BUILD_DIR/bin/audio_convert.exe"
 echo "video_convert demo built at: $DEMO_BUILD_DIR/bin/video_convert.exe"
 echo "media_info demo built at: $DEMO_BUILD_DIR/bin/media_info.exe"
 
+for runtime_dir in "$SDK_BIN_DIR" "$SDK_LIB_DIR" "$SDK_LIB64_DIR"; do
+    if [ -d "$runtime_dir" ]; then
+        find "$runtime_dir" -maxdepth 1 -type f -name '*.dll' -exec cp -f {} "$DEMO_BUILD_DIR/bin/" \;
+    fi
+done
+
 export PATH="$SDK_BIN_DIR:$SDK_LIB_DIR:$SDK_LIB64_DIR:$PATH"
 echo "Using PATH=$PATH"
 
