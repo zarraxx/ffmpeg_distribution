@@ -23,13 +23,6 @@ export CXX=${CXX:-g++}
 
 ls -la $ARCHIVE_DIR
 
-
-mkdir -p /opt/cmake
-curl -L -o cmake.zip https://github.com/Kitware/CMake/releases/download/v3.27.9/cmake-3.27.9-windows-x86_64.zip
-unzip -q cmake.zip -d /opt/cmake
-export PATH="/opt/cmake/cmake-3.27.9-windows-x86_64/bin:$PATH"
-cmake --version
-
 export PATH="/opt/cmake/cmake-3.27.9-windows-x86_64/bin:$PATH"
 cmake --version
 
