@@ -53,7 +53,7 @@ init_shared_runtime_flags() {
 
             # 4. CMake 专用参数
             # macOS 下 CMAKE_MACOSX_RPATH 默认通常是开启的
-            SDK_CMAKE_SHARED_ARGS="-DCMAKE_BUILD_RPATH='$CMAKE_RPATH' -DCMAKE_INSTALL_RPATH='$CMAKE_RPATH' -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE -DCMAKE_MACOSX_RPATH=TRUE"
+            SDK_CMAKE_SHARED_ARGS="-DCMAKE_BUILD_RPATH='$CMAKE_RPATH' -DCMAKE_INSTALL_RPATH='$CMAKE_RPATH' -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE -DCMAKE_MACOSX_RPATH=TRUE -DCMAKE_INSTALL_NAME_DIR=@rpath"
             ;;
             
         *)
@@ -340,6 +340,7 @@ build_x264(){
     rm -rf x264*
     tar xvf $ARCHIVE_DIR/x264-$X264_VERSION.tar.bz2
     cd x264-stable
+    
     ./configure --prefix=$DEST_DYNAMIC_DIR --enable-pic --disable-static --enable-shared --disable-cli \
     --extra-ldflags="$SDK_SHARED_LINK_FLAGS" ${X264_CONF_EXTRA}
     make -j$(get_cpu_count)
