@@ -19,8 +19,10 @@ export PATH=/opt/x-tools/utils/bin:$PATH
 # We also link these static FFmpeg libs into our own shared test library, so
 # FFmpeg's asm objects need to be disabled for a consistently PIC-safe SDK.
 export X264_CONF_EXTRA='--extra-cflags=-fno-fast-math -fno-finite-math-only -fno-unsafe-math-optimizations'
-export FFMPEG_CONFIG_EXTRA="--disable-asm"
 
+export FFMPEG_CONFIG_EXTRA=""
+export FFMPEG_STATIC_CONFIG_EXTRA="--disable-asm"
+export FFMPEG_DYNAMIC_CONFIG_EXTRA=""
 
 export BUILD_DIR=/workspace/build
 export DEST_DYNAMIC_DIR=/opt/x-tools/dist/ffmpeg-dynamic
@@ -41,10 +43,10 @@ build_vorbis
 build_opus
 build_x264
 
-export X265_CMAKE_EXTRA="-DENABLE_ASSEMBLY=OFF -DCC_HAS_FAST_MATH=FALSE"
+export X265_CMAKE_EXTRA=" -DCC_HAS_FAST_MATH=FALSE "
+export X265_STATIC_CMAKE_EXTRA=" -DENABLE_ASSEMBLY=OFF "
 if [ "$(uname -m)" = "aarch64" ]; then
- 
-  export FFMPEG_CONFIG_EXTRA="$FFMPEG_CONFIG_EXTRA --disable-neon"
+  export FFMPEG_STATIC_CONFIG_EXTRA="$FFMPEG_STATIC_CONFIG_EXTRA --disable-neon"
 fi
 
 build_x265

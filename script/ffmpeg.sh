@@ -9,23 +9,61 @@ export OPUS_VERSION=1.6.1
 
 export PKG_CONFIG_PATH="$DEST_STATIC_DIR/lib/pkgconfig:$DEST_STATIC_DIR/lib64/pkgconfig"
 
-init_shared_runtime_flags() {
-    SDK_RUNTIME_RPATH=""
-    SDK_SHARED_LINK_FLAGS=""
-    SDK_CMAKE_SHARED_ARGS=""
 
-    case "$(uname -s)" in
+init_shared_runtime_flags() {
+    # 局部变量，防止污染全局环境
+    local OS_TYPE="$(uname -s)"
+    local RPATH_LIST=""
+
+    case "$OS_TYPE" in
         Linux)
-            SDK_RUNTIME_RPATH='$ORIGIN'
-            SDK_SHARED_LINK_FLAGS="-Wl,-rpath,$SDK_RUNTIME_RPATH -Wl,-rpath-link,$DEST_DYNAMIC_DIR/lib -Wl,-rpath-link,$DEST_DYNAMIC_DIR/lib64"
-            SDK_CMAKE_SHARED_ARGS="-DCMAKE_BUILD_RPATH=$SDK_RUNTIME_RPATH -DCMAKE_INSTALL_RPATH=$SDK_RUNTIME_RPATH"
+            # 1. 定义路径列表（用于 CMake，CMake 列表用分号分隔）
+            # 注意：在 shell 中写分号需要加引号，且 $ORIGIN 需要转义防止被 shell 解析
+            RPATH_LIST='\$ORIGIN:\$ORIGIN/../lib:\$ORIGIN/../lib64'
+            # 转换给 CMake 用的分号分隔格式
+            local CMAKE_RPATH='\$ORIGIN;\$ORIGIN/../lib;\$ORIGIN/../lib64'
+
+            # 2. 运行时 RPATH (用于普通链接器 LDFLAGS)
+            # Linux 习惯用冒号分隔，或者多次使用 -rpath
+            SDK_RUNTIME_RPATH="$RPATH_LIST"
+            
+            # 3. 链接阶段参数
+            # -Wl,-rpath 指定运行时路径
+            # -Wl,-rpath-link 指定交叉编译或链接时查找间接依赖的路径
+            SDK_SHARED_LINK_FLAGS='-Wl,-rpath,\$$ORIGIN -Wl,-rpath,\$$ORIGIN/../lib -Wl,-rpath,\$$ORIGIN/../lib64'
+            # if [ -n "$DEST_DYNAMIC_DIR" ]; then
+            #     SDK_SHARED_LINK_FLAGS="$SDK_SHARED_LINK_FLAGS -Wl,-rpath-link,$DEST_DYNAMIC_DIR/lib -Wl,-rpath-link,$DEST_DYNAMIC_DIR/lib64"
+            # fi
+
+            # 4. CMake 专用参数
+            # 必须用单引号包裹包含分号的变量，防止 shell 执行分割
+            SDK_CMAKE_SHARED_ARGS="-DCMAKE_BUILD_RPATH='$CMAKE_RPATH' -DCMAKE_INSTALL_RPATH='$CMAKE_RPATH' -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE"
             ;;
+
         Darwin)
-            SDK_RUNTIME_RPATH='@loader_path'
-            SDK_SHARED_LINK_FLAGS="-Wl,-rpath,$SDK_RUNTIME_RPATH"
-            SDK_CMAKE_SHARED_ARGS="-DCMAKE_BUILD_RPATH=$SDK_RUNTIME_RPATH -DCMAKE_INSTALL_RPATH=$SDK_RUNTIME_RPATH"
+            # 1. 定义路径列表
+            RPATH_LIST='@loader_path:@loader_path/../lib'
+            local CMAKE_RPATH='@loader_path;@loader_path/../lib'
+
+            # 2. 运行时 RPATH
+            SDK_RUNTIME_RPATH="$RPATH_LIST"
+
+            # 3. 链接阶段参数 (macOS 多个 rpath 建议多次写 -Wl,-rpath)
+            SDK_SHARED_LINK_FLAGS="-Wl,-rpath,@loader_path -Wl,-rpath,@loader_path/../lib"
+
+            # 4. CMake 专用参数
+            # macOS 下 CMAKE_MACOSX_RPATH 默认通常是开启的
+            SDK_CMAKE_SHARED_ARGS="-DCMAKE_BUILD_RPATH='$CMAKE_RPATH' -DCMAKE_INSTALL_RPATH='$CMAKE_RPATH' -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE -DCMAKE_MACOSX_RPATH=TRUE"
+            ;;
+            
+        *)
+            echo "Unsupported OS: $OS_TYPE"
+            return 1
             ;;
     esac
+
+    # 导出变量（或者根据你的需求决定是否 export）
+    export SDK_RUNTIME_RPATH SDK_SHARED_LINK_FLAGS SDK_CMAKE_SHARED_ARGS 
 }
 
 init_shared_runtime_flags
@@ -316,7 +354,7 @@ build_x265(){
 
     rm -rf _build && mkdir -p _build && cd _build
     cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release  -DCMAKE_INSTALL_LIBDIR=lib \
-    -DCMAKE_INSTALL_PREFIX=$DEST_STATIC_DIR -DENABLE_SHARED=0 -DENABLE_CLI=0 -DENABLE_PIC=1 ${X265_CMAKE_EXTRA} ../source
+    -DCMAKE_INSTALL_PREFIX=$DEST_STATIC_DIR -DENABLE_SHARED=0 -DENABLE_CLI=0 -DENABLE_PIC=1 ${X265_CMAKE_EXTRA}  ${X265_STATIC_CMAKE_EXTRA} ../source
     make -j$(get_cpu_count)
     make install
 
@@ -328,7 +366,7 @@ build_x265(){
     rm -rf _build && mkdir -p _build && cd _build
     cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release  -DCMAKE_INSTALL_LIBDIR=lib \
     -DCMAKE_INSTALL_PREFIX=$DEST_DYNAMIC_DIR -DENABLE_SHARED=1 -DENABLE_CLI=0 -DENABLE_PIC=1 \
-    ${SDK_CMAKE_SHARED_ARGS} ${X265_CMAKE_EXTRA} ../source
+    ${SDK_CMAKE_SHARED_ARGS} ${X265_CMAKE_EXTRA} ${X265_DYNAMIC_CMAKE_EXTRA} ../source
     make -j$(get_cpu_count)
     make install
 }
@@ -392,6 +430,7 @@ build_ffmpeg(){
     cd ffmpeg-$FFMPEG_VERSION
 
     export FFMPEG_FEATURES=" --disable-doc \
+    --progs-suffix=_custom \
     --disable-debug \
     --enable-small \
     --disable-everything \
@@ -403,6 +442,8 @@ build_ffmpeg(){
     --disable-lzma \
     --disable-sdl2 \
     --enable-gpl \
+    --enable-ffmpeg \
+    --enable-ffprobe \
     \
     --enable-avcodec \
     --enable-avformat \
@@ -481,13 +522,13 @@ build_ffmpeg(){
     --extra-cflags="-I$DEST_STATIC_DIR/include" \
     --extra-ldflags="-L$DEST_STATIC_DIR/lib -L$DEST_STATIC_DIR/lib64" \
     --extra-libs="-lm -lpthread" \
-    --disable-programs \
     ${FFMPEG_FEATURES} \
-    ${FFMPEG_CONFIG_EXTRA}
+    ${FFMPEG_CONFIG_EXTRA} \
+    ${FFMPEG_STATIC_CONFIG_EXTRA}
 
 
     make -j$(get_cpu_count)
-    make install-libs install-headers
+    make install
 
 
     export PKG_CONFIG_PATH="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
@@ -496,18 +537,21 @@ build_ffmpeg(){
     tar xvf $ARCHIVE_DIR/ffmpeg-$FFMPEG_VERSION.tar.xz
     cd ffmpeg-$FFMPEG_VERSION
 
+    LDFLAGS="${LDFLAGS:+$LDFLAGS }${SDK_SHARED_LINK_FLAGS}" \
+    CFLAGS="${CFLAGS:+$CFLAGS } -fPIC" \
     ./configure \
     --prefix=$DEST_DYNAMIC_DIR \
     --enable-shared \
     --disable-static \
     --extra-cflags="-I$DEST_DYNAMIC_DIR/include" \
-    --extra-ldflags="-L$DEST_DYNAMIC_DIR/lib -L$DEST_DYNAMIC_DIR/lib64 ${SDK_SHARED_LINK_FLAGS}" \
+    --extra-ldflags="-L$DEST_DYNAMIC_DIR/lib -L$DEST_DYNAMIC_DIR/lib64 " \
     --extra-libs="-lm -lpthread " \
-    --disable-programs \
-    ${FFMPEG_FEATURES} 
+    ${FFMPEG_FEATURES} \
+    ${FFMPEG_CONFIG_EXTRA} \
+    ${FFMPEG_DYNAMIC_CONFIG_EXTRA} \
 
     make -j$(get_cpu_count)
-    make install-libs install-headers
+    make install
 
    
     normalize_pkgconfig_metadata ${DEST_STATIC_DIR}

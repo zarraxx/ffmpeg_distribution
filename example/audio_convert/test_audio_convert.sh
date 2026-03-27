@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+set -euox pipefail
 
 ROOT="$(cd "$(dirname "$(realpath "$0")")"; pwd)"
 
@@ -128,6 +128,7 @@ for input_file in "$INPUT_DIR"/*; do
     output_file="$OUTPUT_DIR/${stem}.mp3"
 
     echo "  converting $base_name"
+    
     run_example_binary "$AUDIO_CONVERT_BIN" "$input_file" "$output_file"
 
     codec_name="$(run_host_tool ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 "$output_file")"

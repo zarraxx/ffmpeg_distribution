@@ -40,30 +40,33 @@ fi
 
 tar -czvf $OUTPUT_DIR/ffmpeg-darwin-${ARCH}${PACKAGE_SUFFIX_PART}.tar.gz -C "$(dirname "$DEST_DIR")" "$(basename "$DEST_DIR")"
 
-SDK_ROOT="$DEST_DIR/ffmpeg-dynamic"
-SDK_LIB_DIR="$SDK_ROOT/lib"
-SDK_LIB64_DIR="$SDK_ROOT/lib64"
-
+source $ROOT/script/ffmpeg_test.sh
 DEMO_BUILD_DIR=$ROOT/build/example-darwin-$ARCH
-echo "Building examples with CMake..."
-cmake -S $ROOT/example -B $DEMO_BUILD_DIR -DFFMPEG_ROOT=$SDK_ROOT -DCMAKE_BUILD_TYPE=Release
-cmake --build $DEMO_BUILD_DIR --parallel
-echo "ffmpeg_example shared library built at: $DEMO_BUILD_DIR/bin/libffmpeg_example.dylib"
-echo "audio_convert demo built at: $DEMO_BUILD_DIR/bin/audio_convert"
-echo "video_convert demo built at: $DEMO_BUILD_DIR/bin/video_convert"
-echo "media_info demo built at: $DEMO_BUILD_DIR/bin/media_info"
-
-export FFMPEG_EXAMPLE_DYLD_LIBRARY_PATH="$SDK_LIB_DIR:$SDK_LIB64_DIR"
-echo "Using FFMPEG_EXAMPLE_DYLD_LIBRARY_PATH=$FFMPEG_EXAMPLE_DYLD_LIBRARY_PATH"
+rm -rf ${DEMO_BUILD_DIR}
+build_example $ROOT/example ${DEMO_BUILD_DIR}/static $DEST_DIR/ffmpeg-static
+build_example $ROOT/example ${DEMO_BUILD_DIR}/dynamic $DEST_DIR/ffmpeg-dynamic
 
 echo "Installing system ffmpeg for example tests..."
 brew install ffmpeg
 
-chmod +x $ROOT/example/audio_convert/test_audio_convert.sh
-chmod +x $ROOT/example/video_convert/test_video_convert.sh
+echo "Running example tests with static ffmpeg..."
+run_example $ROOT/example ${DEMO_BUILD_DIR}/static
 
-echo "Running audio_convert tests..."
-$ROOT/example/audio_convert/test_audio_convert.sh $DEMO_BUILD_DIR/bin/audio_convert $ROOT/build/audio_convert-test-darwin-$ARCH
+echo "Running example tests with dynamic ffmpeg..."
+export FFMPEG_EXAMPLE_LD_LIBRARY_PATH="$DEST_DIR/ffmpeg-dynamic/lib:$DEST_DIR/ffmpeg-dynamic/lib64"
+export FFMPEG_EXAMPLE_DYLD_LIBRARY_PATH="$FFMPEG_EXAMPLE_LD_LIBRARY_PATH"
+run_example $ROOT/example ${DEMO_BUILD_DIR}/dynamic
 
-echo "Running video_convert tests..."
-$ROOT/example/video_convert/test_video_convert.sh $DEMO_BUILD_DIR/bin/video_convert $ROOT/build/video_convert-test-darwin-$ARCH
+echo "Example tests completed successfully!"
+
+echo "Checking dynamic library dependencies with otool..."
+dyld_info -dependents $DEST_DIR/ffmpeg-dynamic/bin/ffmpeg_custom
+
+echo "Checking rpath with otool..."
+otool -l $DEST_DIR/ffmpeg-dynamic/bin/ffmpeg_custom | grep -A2 LC_RPATH
+
+
+echo "Running ffmpeg_custom with DYLD_PRINT_LIBRARIES=1 to verify dynamic libraries are loaded correctly..."
+DYLD_PRINT_LIBRARIES=1 $DEST_DIR/ffmpeg-dynamic/bin/ffmpeg_custom -version
+
+echo "All checks passed successfully!"
