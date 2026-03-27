@@ -25,4 +25,6 @@ build_opus
 build_x264
 build_x265
 build_dav1d
+
+export FFMPEG_DYNAMIC_CONFIG_EXTRA="--install-name-dir='@rpath' "
 build_ffmpeg

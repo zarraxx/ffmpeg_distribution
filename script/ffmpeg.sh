@@ -534,6 +534,12 @@ build_ffmpeg(){
     make install
 
 
+    if [ "$(uname -m)" = "Darwin" ]; then
+        export PKG_CONFIG_LIBDIR="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
+        unset PKG_CONFIG_PATH
+    else
+         export PKG_CONFIG_PATH="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
+    fi
     export PKG_CONFIG_PATH="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
     cd $BUILD_DIR
     rm -rf ffmpeg*
