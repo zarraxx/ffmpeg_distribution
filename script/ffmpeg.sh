@@ -58,6 +58,9 @@ init_shared_runtime_flags() {
             
         *)
             echo "Unsupported OS: $OS_TYPE"
+            SDK_RUNTIME_RPATH=""
+            SDK_SHARED_LINK_FLAGS=""
+            SDK_CMAKE_SHARED_ARGS=""
             return 0
             ;;
     esac
