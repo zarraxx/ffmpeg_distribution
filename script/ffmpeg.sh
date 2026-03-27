@@ -31,8 +31,8 @@ init_shared_runtime_flags() {
             # -Wl,-rpath 指定运行时路径
             # -Wl,-rpath-link 指定交叉编译或链接时查找间接依赖的路径
             SDK_SHARED_LINK_FLAGS='-Wl,-rpath,\$$ORIGIN -Wl,-rpath,\$$ORIGIN/../lib -Wl,-rpath,\$$ORIGIN/../lib64'
-            # if [ -n "$DEST_DYNAMIC_DIR" ]; then
-            #     SDK_SHARED_LINK_FLAGS="$SDK_SHARED_LINK_FLAGS -Wl,-rpath-link,$DEST_DYNAMIC_DIR/lib -Wl,-rpath-link,$DEST_DYNAMIC_DIR/lib64"
+            # if [ -n "$DEST_SHARED_DIR" ]; then
+            #     SDK_SHARED_LINK_FLAGS="$SDK_SHARED_LINK_FLAGS -Wl,-rpath-link,$DEST_SHARED_DIR/lib -Wl,-rpath-link,$DEST_SHARED_DIR/lib64"
             # fi
 
             # 4. CMake 专用参数
@@ -194,7 +194,7 @@ build_lame(){
     make -j$(get_cpu_count)
     make install
 
-    export PKG_CONFIG_PATH="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
+    export PKG_CONFIG_PATH="$DEST_SHARED_DIR/lib/pkgconfig:$DEST_SHARED_DIR/lib64/pkgconfig"
     cd $BUILD_DIR
     rm -rf lame*
     tar xvf $ARCHIVE_DIR/lame-$LAME_VERSION.tar.gz
@@ -203,7 +203,7 @@ build_lame(){
 
     LDFLAGS="${LDFLAGS:+$LDFLAGS }${SDK_SHARED_LINK_FLAGS}" \
     CFLAGS="${CFLAGS:+$CFLAGS }-fPIC" \
-    ./configure --prefix=$DEST_DYNAMIC_DIR  --disable-static --enable-shared --disable-frontend
+    ./configure --prefix=$DEST_SHARED_DIR  --disable-static --enable-shared --disable-frontend
 
     make -j$(get_cpu_count)
     make install
@@ -230,7 +230,7 @@ build_ogg(){
     make -j$(get_cpu_count)
     make install
 
-    export PKG_CONFIG_PATH="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
+    export PKG_CONFIG_PATH="$DEST_SHARED_DIR/lib/pkgconfig:$DEST_SHARED_DIR/lib64/pkgconfig"
     cd $BUILD_DIR
     rm -rf libogg*
     tar xvf $ARCHIVE_DIR/libogg-$OGG_VERSION.tar.xz
@@ -241,7 +241,7 @@ build_ogg(){
     -DBUILD_SHARED_LIBS=ON \
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
     -DCMAKE_INSTALL_LIBDIR=lib  \
-    -DCMAKE_INSTALL_PREFIX=$DEST_DYNAMIC_DIR \
+    -DCMAKE_INSTALL_PREFIX=$DEST_SHARED_DIR \
     ${SDK_CMAKE_SHARED_ARGS} ..
     make -j$(get_cpu_count)
     make install
@@ -267,7 +267,7 @@ build_vorbis(){
     make -j$(get_cpu_count)
     make install
 
-    export PKG_CONFIG_PATH="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
+    export PKG_CONFIG_PATH="$DEST_SHARED_DIR/lib/pkgconfig:$DEST_SHARED_DIR/lib64/pkgconfig"
     cd $BUILD_DIR
     rm -rf libvorbis*
     tar xvf $ARCHIVE_DIR/libvorbis-$VORBIS_VERSION.tar.xz
@@ -278,7 +278,7 @@ build_vorbis(){
     -DBUILD_SHARED_LIBS=ON \
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
     -DCMAKE_INSTALL_LIBDIR=lib  \
-    -DCMAKE_INSTALL_PREFIX=$DEST_DYNAMIC_DIR \
+    -DCMAKE_INSTALL_PREFIX=$DEST_SHARED_DIR \
     ${SDK_CMAKE_SHARED_ARGS} \
     ${VORBIS_CMAKE_EXTRA} ..
     make -j$(get_cpu_count)
@@ -305,7 +305,7 @@ build_opus(){
     make -j$(get_cpu_count)
     make install
 
-    export PKG_CONFIG_PATH="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
+    export PKG_CONFIG_PATH="$DEST_SHARED_DIR/lib/pkgconfig:$DEST_SHARED_DIR/lib64/pkgconfig"
     cd $BUILD_DIR
     rm -rf opus*
     tar xvf $ARCHIVE_DIR/opus-$OPUS_VERSION.tar.gz
@@ -316,7 +316,7 @@ build_opus(){
     -DBUILD_SHARED_LIBS=ON \
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
     -DCMAKE_INSTALL_LIBDIR=lib  \
-    -DCMAKE_INSTALL_PREFIX=$DEST_DYNAMIC_DIR \
+    -DCMAKE_INSTALL_PREFIX=$DEST_SHARED_DIR \
     ${SDK_CMAKE_SHARED_ARGS} ..
     make -j$(get_cpu_count)
     make install
@@ -335,13 +335,13 @@ build_x264(){
     make -j$(get_cpu_count)
     make install
 
-    export PKG_CONFIG_PATH="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
+    export PKG_CONFIG_PATH="$DEST_SHARED_DIR/lib/pkgconfig:$DEST_SHARED_DIR/lib64/pkgconfig"
     cd $BUILD_DIR
     rm -rf x264*
     tar xvf $ARCHIVE_DIR/x264-$X264_VERSION.tar.bz2
     cd x264-stable
     
-    ./configure --prefix=$DEST_DYNAMIC_DIR --enable-pic --disable-static --enable-shared --disable-cli \
+    ./configure --prefix=$DEST_SHARED_DIR --enable-pic --disable-static --enable-shared --disable-cli \
     --extra-ldflags="$SDK_SHARED_LINK_FLAGS" ${X264_CONF_EXTRA}
     make -j$(get_cpu_count)
     make install
@@ -362,15 +362,15 @@ build_x265(){
     make -j$(get_cpu_count)
     make install
 
-    export PKG_CONFIG_PATH="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
+    export PKG_CONFIG_PATH="$DEST_SHARED_DIR/lib/pkgconfig:$DEST_SHARED_DIR/lib64/pkgconfig"
     cd $BUILD_DIR
     rm -rf x265*
     tar xvf $ARCHIVE_DIR/x265_$x265_VERSION.tar.gz
     cd x265_$x265_VERSION
     rm -rf _build && mkdir -p _build && cd _build
     cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release  -DCMAKE_INSTALL_LIBDIR=lib \
-    -DCMAKE_INSTALL_PREFIX=$DEST_DYNAMIC_DIR -DENABLE_SHARED=1 -DENABLE_CLI=0 -DENABLE_PIC=1 \
-    ${SDK_CMAKE_SHARED_ARGS} ${X265_CMAKE_EXTRA} ${X265_DYNAMIC_CMAKE_EXTRA} ../source
+    -DCMAKE_INSTALL_PREFIX=$DEST_SHARED_DIR -DENABLE_SHARED=1 -DENABLE_CLI=0 -DENABLE_PIC=1 \
+    ${SDK_CMAKE_SHARED_ARGS} ${X265_CMAKE_EXTRA} ${X265_SHARED_CMAKE_EXTRA} ../source
     make -j$(get_cpu_count)
     make install
 }
@@ -400,7 +400,7 @@ build_dav1d(){
     }
     ninja install
 
-    export PKG_CONFIG_PATH="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
+    export PKG_CONFIG_PATH="$DEST_SHARED_DIR/lib/pkgconfig:$DEST_SHARED_DIR/lib64/pkgconfig"
     cd $BUILD_DIR
     rm -rf dav1d*
     tar xvf $ARCHIVE_DIR/dav1d-$AV1_VERSION.tar.xz
@@ -408,7 +408,7 @@ build_dav1d(){
     rm -rf _build && mkdir -p _build && cd _build
     LDFLAGS="${LDFLAGS:+$LDFLAGS }${SDK_SHARED_LINK_FLAGS}" meson setup .. \
         --buildtype=release \
-        -Dprefix=$DEST_DYNAMIC_DIR \
+        -Dprefix=$DEST_SHARED_DIR \
         -Dlibdir=lib \
         -Denable_tools=false \
         -Denable_tests=false \
@@ -536,12 +536,12 @@ build_ffmpeg(){
 
 
     if [ "$(uname -m)" = "Darwin" ]; then
-        export PKG_CONFIG_LIBDIR="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
+        export PKG_CONFIG_LIBDIR="$DEST_SHARED_DIR/lib/pkgconfig:$DEST_SHARED_DIR/lib64/pkgconfig"
         unset PKG_CONFIG_PATH
     else
-         export PKG_CONFIG_PATH="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
+         export PKG_CONFIG_PATH="$DEST_SHARED_DIR/lib/pkgconfig:$DEST_SHARED_DIR/lib64/pkgconfig"
     fi
-    export PKG_CONFIG_PATH="$DEST_DYNAMIC_DIR/lib/pkgconfig:$DEST_DYNAMIC_DIR/lib64/pkgconfig"
+    export PKG_CONFIG_PATH="$DEST_SHARED_DIR/lib/pkgconfig:$DEST_SHARED_DIR/lib64/pkgconfig"
     cd $BUILD_DIR
     rm -rf ffmpeg*
     tar xvf $ARCHIVE_DIR/ffmpeg-$FFMPEG_VERSION.tar.xz
@@ -550,20 +550,20 @@ build_ffmpeg(){
     LDFLAGS="${LDFLAGS:+$LDFLAGS }${SDK_SHARED_LINK_FLAGS}" \
     CFLAGS="${CFLAGS:+$CFLAGS } -fPIC" \
     ./configure \
-    --prefix=$DEST_DYNAMIC_DIR \
+    --prefix=$DEST_SHARED_DIR \
     --enable-shared \
     --disable-static \
-    --extra-cflags="-I$DEST_DYNAMIC_DIR/include" \
-    --extra-ldflags="-L$DEST_DYNAMIC_DIR/lib -L$DEST_DYNAMIC_DIR/lib64 " \
+    --extra-cflags="-I$DEST_SHARED_DIR/include" \
+    --extra-ldflags="-L$DEST_SHARED_DIR/lib -L$DEST_SHARED_DIR/lib64 " \
     --extra-libs="-lm -lpthread " \
     ${FFMPEG_FEATURES} \
     ${FFMPEG_CONFIG_EXTRA} \
-    ${FFMPEG_DYNAMIC_CONFIG_EXTRA} \
+    ${FFMPEG_SHARED_CONFIG_EXTRA} \
 
     make -j$(get_cpu_count)
     make install
 
    
     normalize_pkgconfig_metadata ${DEST_STATIC_DIR}
-    normalize_pkgconfig_metadata ${DEST_DYNAMIC_DIR}
+    normalize_pkgconfig_metadata ${DEST_SHARED_DIR}
 }

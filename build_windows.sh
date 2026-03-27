@@ -5,13 +5,13 @@ ROOT="$(cd $(dirname "$(realpath "$0")");pwd)"
 ARCH=`uname -m`
 WORKSPACE=$ROOT/build/workspace
 ARCHIVE_DIR=$ROOT/archive
-DEST_DIR=$ROOT/dist/windowx-x86_64
+DEST_DIR=$ROOT/dist/windows-x86_64
 OUTPUT_DIR=$ROOT/out
 
 mkdir -p $DEST_DIR
 mkdir -p $OUTPUT_DIR
 rm -rf $WORKSPACE
-rm -rf "$DEST_DIR/ffmpeg*"
+rm -rf "$DEST_DIR/ffmpeg-static" "$DEST_DIR/ffmpeg-shared"
 mkdir -p $WORKSPACE
 mkdir -p $ARCHIVE_DIR
 
@@ -42,7 +42,7 @@ copy_windows_runtime_dlls() {
         fi
     done
 }
-copy_windows_runtime_dlls "$DEST_DIR/ffmpeg-dynamic/bin"
+copy_windows_runtime_dlls "$DEST_DIR/ffmpeg-shared/bin"
 
 PACKAGE_SUFFIX_PART=""
 if [ -n "$PACKAGE_SUFFIX" ]; then
@@ -57,9 +57,9 @@ source $ROOT/script/ffmpeg_test.sh
 DEMO_BUILD_DIR=$ROOT/build/example-windows-x86_64
 rm -rf $DEMO_BUILD_DIR
 build_example $ROOT/example ${DEMO_BUILD_DIR}/static $DEST_DIR/ffmpeg-static
-build_example $ROOT/example ${DEMO_BUILD_DIR}/dynamic $DEST_DIR/ffmpeg-dynamic
+build_example $ROOT/example ${DEMO_BUILD_DIR}/shared $DEST_DIR/ffmpeg-shared
 
-copy_windows_runtime_dlls "$DEST_DIR/ffmpeg-dynamic/bin"
+copy_windows_runtime_dlls "$DEST_DIR/ffmpeg-shared/bin"
 
 echo "Installing system ffmpeg for example tests..."
 pacman -S --needed --noconfirm mingw-w64-ucrt-x86_64-ffmpeg
@@ -67,14 +67,14 @@ pacman -S --needed --noconfirm mingw-w64-ucrt-x86_64-ffmpeg
 echo "Running example tests with static ffmpeg..."
 run_example $ROOT/example ${DEMO_BUILD_DIR}/static
 
-echo "Running example tests with dynamic ffmpeg..."
+echo "Running example tests with shared ffmpeg..."
 
-for runtime_dir in "$DEST_DIR/ffmpeg-dynamic/bin" "$$DEST_DIR/ffmpeg-dynamic/lib" ; do
+for runtime_dir in "$DEST_DIR/ffmpeg-shared/bin" "$DEST_DIR/ffmpeg-shared/lib" ; do
     if [ -d "$runtime_dir" ]; then
-        find "$runtime_dir" -maxdepth 1 -type f -name '*.dll' -exec cp -f {} "${DEMO_BUILD_DIR}/dynamic/bin/" \;
+        find "$runtime_dir" -maxdepth 1 -type f -name '*.dll' -exec cp -f {} "${DEMO_BUILD_DIR}/shared/bin/" \;
     fi
 done
 
-run_example $ROOT/example ${DEMO_BUILD_DIR}/dynamic
+run_example $ROOT/example ${DEMO_BUILD_DIR}/shared
 
 echo "Example tests completed successfully!"

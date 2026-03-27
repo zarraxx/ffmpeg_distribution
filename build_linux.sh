@@ -15,7 +15,7 @@ mkdir -p $ARCHIVE_DIR
 mkdir -p $DEST_DIR
 mkdir -p $OUTPUT_DIR
 rm -rf $WORKSPACE
-rm -rf "$DEST_DIR/ffmpeg"
+rm -rf "$DEST_DIR/ffmpeg-static" "$DEST_DIR/ffmpeg-shared"
 mkdir -p $WORKSPACE
 DOCKER=${DOCKER:-podman}
 
@@ -45,7 +45,7 @@ source $ROOT/script/ffmpeg_test.sh
 DEMO_BUILD_DIR=$ROOT/build/example-linux-$ARCH
 rm -rf $DEMO_BUILD_DIR
 build_example $ROOT/example ${DEMO_BUILD_DIR}/static $DEST_DIR/ffmpeg-static
-build_example $ROOT/example ${DEMO_BUILD_DIR}/dynamic $DEST_DIR/ffmpeg-dynamic
+build_example $ROOT/example ${DEMO_BUILD_DIR}/shared $DEST_DIR/ffmpeg-shared
 
 if [ "$(id -u)" -eq 0 ]; then
     SUDO=""
@@ -60,18 +60,18 @@ $SUDO apt-get install -y ffmpeg
 echo "Running example tests with static ffmpeg..."
 run_example $ROOT/example ${DEMO_BUILD_DIR}/static
 
-echo "Running example tests with dynamic ffmpeg..."
-export FFMPEG_EXAMPLE_LD_LIBRARY_PATH="$DEST_DIR/ffmpeg-dynamic/lib:$DEST_DIR/ffmpeg-dynamic/lib64"
+echo "Running example tests with shared ffmpeg..."
+export FFMPEG_EXAMPLE_LD_LIBRARY_PATH="$DEST_DIR/ffmpeg-shared/lib:$DEST_DIR/ffmpeg-shared/lib64"
 export FFMPEG_EXAMPLE_DYLD_LIBRARY_PATH="$FFMPEG_EXAMPLE_LD_LIBRARY_PATH"
-run_example $ROOT/example ${DEMO_BUILD_DIR}/dynamic
+run_example $ROOT/example ${DEMO_BUILD_DIR}/shared
 
 
 echo "Example tests completed successfully!"
 
-echo "Checking dynamic ffmpeg dependencies with ldd..."
-ldd  $DEST_DIR/ffmpeg-dynamic/bin/ffmpeg_custom
+echo "Checking shared ffmpeg dependencies with ldd..."
+ldd  $DEST_DIR/ffmpeg-shared/bin/ffmpeg_custom
 
 echo "Checking ffmpeg version..."
-$DEST_DIR/ffmpeg-dynamic/bin/ffmpeg_custom -version
+$DEST_DIR/ffmpeg-shared/bin/ffmpeg_custom -version
 
 echo "All checks passed successfully!"

@@ -22,15 +22,15 @@ export X264_CONF_EXTRA='--extra-cflags=-fno-fast-math -fno-finite-math-only -fno
 
 export FFMPEG_CONFIG_EXTRA=""
 export FFMPEG_STATIC_CONFIG_EXTRA="--disable-asm"
-export FFMPEG_DYNAMIC_CONFIG_EXTRA=""
+export FFMPEG_SHARED_CONFIG_EXTRA=""
 
 export BUILD_DIR=/workspace/build
-export DEST_DYNAMIC_DIR=/opt/x-tools/dist/ffmpeg-dynamic
+export DEST_SHARED_DIR=/opt/x-tools/dist/ffmpeg-shared
 export DEST_STATIC_DIR=/opt/x-tools/dist/ffmpeg-static
 export ARCHIVE_DIR=/workspace/archive
 
 mkdir -p ${BUILD_DIR}
-mkdir -p ${DEST_DYNAMIC_DIR}
+mkdir -p ${DEST_SHARED_DIR}
 mkdir -p ${DEST_STATIC_DIR}
 mkdir -p ${ARCHIVE_DIR}
 
@@ -46,7 +46,7 @@ build_x264
 export X265_CMAKE_EXTRA=" -DCC_HAS_FAST_MATH=FALSE "
 export X265_STATIC_CMAKE_EXTRA=" -DENABLE_ASSEMBLY=OFF "
 if [ "$(uname -m)" = "aarch64" ]; then
-  export X265_DYNAMIC_CMAKE_EXTRA=" -DENABLE_ASSEMBLY=OFF "
+  export X265_SHARED_CMAKE_EXTRA=" -DENABLE_ASSEMBLY=OFF "
   export FFMPEG_STATIC_CONFIG_EXTRA="$FFMPEG_STATIC_CONFIG_EXTRA --disable-neon"
 fi
 
