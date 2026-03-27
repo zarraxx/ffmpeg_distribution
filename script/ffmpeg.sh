@@ -58,7 +58,7 @@ init_shared_runtime_flags() {
             
         *)
             echo "Unsupported OS: $OS_TYPE"
-            return 1
+            return 0
             ;;
     esac
 
