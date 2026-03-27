@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -ex
 
 ROOT="$(cd $(dirname "$(realpath "$0")");pwd)"
 ARCH=`uname -m`
